@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">AudioTest</string>
+    <string name="play_button">Play/Stop</string>
+    <string name="findBTDevices">Find Devices</string>
+</resources>
