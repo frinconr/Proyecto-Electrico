@@ -2,6 +2,7 @@ package com.example.felipe.audiotest;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +10,9 @@ import android.content.IntentFilter;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
+import android.os.Handler;
+import android.os.Message;
+import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -17,6 +21,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import java.util.Set;
 
@@ -36,12 +41,14 @@ public class MainActivity extends AppCompatActivity {
     SeekBar second_fslider;
     double second_sliderval;
 
-
     //*************************************** BT Variables *****************************************
 
     ListView BT_paired_devices_list;
     ArrayAdapter<String> BTArrayAdapter;
     Set<BluetoothDevice> pairedDevices;
+    BluetoothAdapter mBluetoothAdapter;
+    //*************************************** BT Servidor *****************************************
+    BTServer mBTserver;
 
     //**********************************************************************************************
 
@@ -141,7 +148,7 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        t.start();
+        //t.start();
 
 
 
@@ -183,7 +190,7 @@ public class MainActivity extends AppCompatActivity {
 
         int REQUEST_ENABLE_BT = 3;
 
-        final BluetoothAdapter mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
         if (mBluetoothAdapter == null){
             // Bluetooth not available
@@ -195,23 +202,13 @@ public class MainActivity extends AppCompatActivity {
             Log.d("BLUETOOTH", Integer.toString(REQUEST_ENABLE_BT));
             }
 
-        // *********************************** Paired Devices **************************************
+
+        // ************************* Discovering devices & Paired Devices **************************
 
         BT_paired_devices_list = (ListView) findViewById(R.id.Bluetooth_listview);
         BTArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1);
         BT_paired_devices_list.setAdapter(BTArrayAdapter);
         pairedDevices = mBluetoothAdapter.getBondedDevices();
-
-        if(pairedDevices.size()>0){
-
-            for(BluetoothDevice device: pairedDevices){
-
-                BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-            }
-
-        }
-
-        // *********************************** Discovering devices *********************************
 
 
         Button findBTdevices = (Button) findViewById(R.id.findBTDevices);
@@ -225,7 +222,7 @@ public class MainActivity extends AppCompatActivity {
                     mBluetoothAdapter.cancelDiscovery();
                 }
                 else{
-                    //BTArrayAdapter.clear();
+                    BTArrayAdapter.clear();
                     mBluetoothAdapter.startDiscovery();
                     IntentFilter filter  = new IntentFilter(BluetoothDevice.ACTION_FOUND);
                     registerReceiver(mReceiver, filter);
@@ -233,6 +230,7 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+
         // *****************************************************************************************
 
     }
@@ -243,19 +241,46 @@ public class MainActivity extends AppCompatActivity {
             String action = intent.getAction();
 
             if(BluetoothDevice.ACTION_FOUND.equals(action)){
+                Log.d("BT LIsT","si entra");
+
+                if(pairedDevices.size()>0){
+                    for(BluetoothDevice device: pairedDevices){
+                        BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                    }
+                }
 
                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-                BTArrayAdapter.notifyDataSetChanged();
+                if(BTArrayAdapter.getCount()!=0) {
+                    for (int i = 0; i < BTArrayAdapter.getCount(); i++) {
+                        if(!BTArrayAdapter.getItem(i).equals(device.getName() + "\n" + device.getAddress())){
+                            BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+                            BTArrayAdapter.notifyDataSetChanged();
+                        }
+                    }
+                }
 
             }
         }
     };
 
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+
+        super.onActivityResult(requestCode,resultCode,data);
+        if(resultCode == RESULT_CANCELED){
+            Toast.makeText(getApplicationContext(), "You must turn the Bluetooth on to continue", Toast.LENGTH_SHORT).show();
+            //finish();
+        }
+
+    }
+
+
+
     public void onDestroy(){
 
         super.onDestroy();
         isRunnig = false;
+        mBTserver.cancel();
 
         try{
             t.join();
@@ -266,8 +291,5 @@ public class MainActivity extends AppCompatActivity {
 
         unregisterReceiver(mReceiver);
     }
-
-
-
 
 }
