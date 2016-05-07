@@ -1,34 +1,34 @@
 package com.example.felipe.harmony;
 
 
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothServerSocket;
 import android.bluetooth.BluetoothSocket;
 import android.util.Log;
-
 import java.io.IOException;
-import java.util.UUID;
 
 
-public class BTServer extends Thread {
+
+class BTServer extends Thread {
 
     private final BluetoothServerSocket mmServerSocket;
-    public static final String NAME = "Sounds";
-    public static final UUID MY_UUID = UUID.fromString("3f4e0c20-f5d2-11e5-9ce9-5e5517507c66");
+    final MainActivity mMain;
 
 
-    public BTServer(BluetoothAdapter mBluetoothAdapter) {
+    public BTServer(MainActivity Main) {
         // Use a temporary object that is later assigned to mmServerSocket,
         // because mmServerSocket is final
         BluetoothServerSocket tmp = null;
+        mMain = Main;
+
         try {
             // MY_UUID is the app's UUID string, also used by the client code
-            tmp = mBluetoothAdapter.listenUsingRfcommWithServiceRecord(NAME, MY_UUID);
+            tmp = mMain.mBluetoothAdapter.listenUsingRfcommWithServiceRecord(mMain.NAME, mMain.MY_UUID);
             Log.d("RFCOMM", "BTServer created");
         } catch (IOException e) {
             Log.d("RFCOMM", "Cannot create BlueTooth Socket:" + e.toString());
         }
         mmServerSocket = tmp;
+
     }
 
     public void run() {
@@ -47,6 +47,7 @@ public class BTServer extends Thread {
             // If a connection was accepted
             if (socket != null) {
                 try {
+                    Log.d("BT CONNECTION", "FUCKING CONNECTED");
                     mmServerSocket.close();
                 } catch (IOException e) {
                     Log.d("BT SOCKET", "Couldn't close connection");
@@ -55,7 +56,6 @@ public class BTServer extends Thread {
             }
         }
     }
-
     /** Will cancel the listening socket, and cause the thread to finish */
     public void cancel() {
         try {

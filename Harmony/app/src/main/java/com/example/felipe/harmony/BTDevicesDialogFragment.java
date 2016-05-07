@@ -36,7 +36,6 @@ public class BTDevicesDialogFragment extends DialogFragment {
         }
     }
 
-
     @Override
     public @NonNull Dialog onCreateDialog(final Bundle savedInstanceState) {
         AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
@@ -53,9 +52,5 @@ public class BTDevicesDialogFragment extends DialogFragment {
     public void setListAdapter(ListAdapter mListAdapter){
         this.mListAdapter = mListAdapter;
     }
-/*
-    public int getDeviceChosen(){
-        return chosenDevice;
-    }
-*/
+
 }
