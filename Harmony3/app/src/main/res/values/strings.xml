@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Harmony3</string>
+    <string name="tablet_option">Tablet</string>
+    <string name="smartphone_option">Smartphone</string>
+    <string name="title_activity_tablet">TabletActivity</string>
+    <string name="search_devices">Search for Devices</string>
+    <string name="title_paired_devices">Paired Devices</string>
+    <string name="title_other_devices">Other Devices</string>
+    <string name="button_scan">Scan Devices</string>
+    <string name="none_paired">No devices have been paired</string>
+    <string name="scanning">Scanning for devices ...</string>
+    <string name="select_device">Select a device to connect</string>
+    <string name="none_found">No devices found</string>
+    <string name="Discover_device">Discover your device for 300s</string>
+    <string name="bt_not_enabled_leaving">Bluetooth not enabled. Leaving the aplication</string>
+</resources>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item android:id="@+id/devices_list"
+        android:icon="@drawable/ic_app_bluetooth_icon"
+        android:title="@string/search_devices"
+        app:showAsAction="ifRoom"/>
+    <item android:id="@+id/Discover_device"
+        android:icon="@drawable/ic_eye_icon"
+        android:title="@string/Discover_device"
+        app:showAsAction="ifRoom"/>
+
+</menu>

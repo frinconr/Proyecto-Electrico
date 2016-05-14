@@ -2,12 +2,12 @@ package com.example.felipe.harmony;
 
 
 
-
 import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.FragmentManager;
 import android.bluetooth.BluetoothAdapter;
 import android.content.Intent;
@@ -18,27 +18,26 @@ import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.UUID;
 
 public class MainActivity extends AppCompatActivity implements BTDevicesDialogFragment.NoticeDialogListener {
 
+    public static final String TAG = "MainActivity";
+
     //*************************************** BT Variables *****************************************
     protected static final int REQUEST_ENABLE_BT = 0;
-    ArrayAdapter<String> BTArrayAdapter;
-    Set<BluetoothDevice> pairedDevices;
-    ArrayList<BluetoothDevice> BTDevicesToConnect;
-    BluetoothAdapter mBluetoothAdapter;
-    public final String NAME = "Sounds";
-    public final UUID MY_UUID = UUID.fromString("3f4e0c20-f5d2-11e5-9ce9-5e5517507c66");
-    protected static final int SUCCESS_CONNECT = 0;
-    BTServer mBTServer;
-    BTClient mBTClient;
-    public final MyHandler mHandler = new MyHandler(MainActivity.this);
+    private ArrayAdapter<String> BTArrayAdapter;
+    private Set<BluetoothDevice> pairedDevices;
+    private ArrayList<BluetoothDevice> BTDevicesToConnect;
+    private BluetoothAdapter mBluetoothAdapter;
+    private BluetoothChatService mChatService;
+    private BluetoothDevice selectedDevice;
+    private String mConnectedDeviceName;
     //**********************************************************************************************
 
 
@@ -56,9 +55,7 @@ public class MainActivity extends AppCompatActivity implements BTDevicesDialogFr
             public void onClick(View view) {
 
                 if (mBluetoothAdapter.isEnabled()) {
-
-                    mBTServer = new BTServer(MainActivity.this);
-                    mBTServer.start();
+                    ensureDiscoverable();
                     //Intent myIntent = new Intent(MainActivity.this, Server_activity.class);
                     //MainActivity.this.startActivity(myIntent);
                 } else {
@@ -84,7 +81,6 @@ public class MainActivity extends AppCompatActivity implements BTDevicesDialogFr
                     mBTDevicesDialog.setListAdapter(BTArrayAdapter);
                     mBTDevicesDialog.show(manager, "Bluetooth Devices");
 
-
                 } else {
                     Toast.makeText(getApplicationContext(), "You must turn the Bluetooth on to continue", Toast.LENGTH_SHORT).show();
                     checkBT();
@@ -102,7 +98,14 @@ public class MainActivity extends AppCompatActivity implements BTDevicesDialogFr
         BTArrayAdapter = new ArrayAdapter<>(this, android.R.layout.simple_list_item_1);
         pairedDevices = mBluetoothAdapter.getBondedDevices();
         BTDevicesToConnect = new ArrayList<>();
+        mChatService = null;
+        selectedDevice = null;
+        mConnectedDeviceName = null;
         checkBT();
+        if(mChatService==null && mBluetoothAdapter.isEnabled()){
+            // Initialize the BluetoothChatService to perform bluetooth connections
+            mChatService = new BluetoothChatService(getApplicationContext(), mHandler);
+        }
     }
 
 
@@ -139,6 +142,22 @@ public class MainActivity extends AppCompatActivity implements BTDevicesDialogFr
         }
     }
 
+    private void ensureDiscoverable() {
+        if (mBluetoothAdapter.getScanMode() !=
+                BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE) {
+            Intent discoverableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_DISCOVERABLE);
+            discoverableIntent.putExtra(BluetoothAdapter.EXTRA_DISCOVERABLE_DURATION, 300);
+            startActivity(discoverableIntent);
+        }
+    }
+
+    private void connectDevice(BluetoothDevice device, boolean secure) {
+        // Get the device MAC address
+        // Attempt to connect to the device
+        mChatService.connect(device, secure);
+    }
+
+
 
     private final BroadcastReceiver mReceiver = new BroadcastReceiver() {
 
@@ -172,13 +191,20 @@ public class MainActivity extends AppCompatActivity implements BTDevicesDialogFr
 
         super.onActivityResult(requestCode, resultCode, data);
         if (resultCode == RESULT_CANCELED) {
-            Toast.makeText(getApplicationContext(), "You must turn the Bluetooth on to continue", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getApplicationContext(),R.string.bt_not_enabled, Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "BT not enabled");
+        }else{
+            Toast.makeText(getApplicationContext(),"Bluetooth Enabled", Toast.LENGTH_SHORT).show();
+            Log.d(TAG, "BT not enabled");
         }
     }
 
 
     public void onDestroy() {
         unregisterReceiver(mReceiver);
+        if (mChatService != null) {
+            mChatService.stop();
+        }
         super.onDestroy();
     }
 
@@ -190,33 +216,74 @@ public class MainActivity extends AppCompatActivity implements BTDevicesDialogFr
         if (mBluetoothAdapter.isDiscovering()) {
             mBluetoothAdapter.cancelDiscovery();
         }
-        BluetoothDevice selectedDevice = BTDevicesToConnect.get(chosenDevice);
-        mBTClient = new BTClient(selectedDevice, MainActivity.this,mHandler);
-        mBTClient.start();
-        Toast.makeText(getApplicationContext(), selectedDevice.getName(), Toast.LENGTH_SHORT).show();
+        selectedDevice = BTDevicesToConnect.get(chosenDevice);
+        connectDevice(selectedDevice, false);
+        //Toast.makeText(getApplicationContext(), selectedDevice.getName(), Toast.LENGTH_SHORT).show();
     }
+/*
+    @Override
+    public void onResume() {
+        super.onResume();
 
-
-    private static class MyHandler extends Handler {
-        private final WeakReference<MainActivity> mActivity;
-
-        public MyHandler(MainActivity activity) {
-            mActivity = new WeakReference<>(activity);
-        }
-
-        @Override
-        public void handleMessage(Message msg) {
-            MainActivity activity = mActivity.get();
-            if (activity != null) {
-                super.handleMessage(msg);
-                switch (msg.what) {
-                    case SUCCESS_CONNECT:
-                        Toast.makeText(activity.getApplicationContext(),"FUCKING CONNECTED" , Toast.LENGTH_SHORT).show();
-                        Log.d("BT CONNECTION","ALGUNA MIERDA");
-                        break;
-                }
+        // Performing this check in onResume() covers the case in which BT was
+        // not enabled during onStart(), so we were paused to enable it...
+        // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
+        if (mChatService != null) {
+            // Only if the state is STATE_NONE, do we know that we haven't started already
+            if (mChatService.getState() == BluetoothChatService.STATE_NONE) {
+                // Start the Bluetooth chat services
+                mChatService.start();
             }
         }
+    }*/
 
-    }
+    /**
+     * The Handler that gets information back from the BluetoothChatService
+     */
+    private final Handler mHandler = new Handler() {
+        @Override
+        public void handleMessage(Message msg) {
+
+            switch (msg.what) {
+                case Constants.MESSAGE_STATE_CHANGE:
+                    switch (msg.arg1) {
+                        case BluetoothChatService.STATE_CONNECTED:
+                            break;
+                        case BluetoothChatService.STATE_CONNECTING:
+                            break;
+                        case BluetoothChatService.STATE_LISTEN:
+                        case BluetoothChatService.STATE_NONE:
+                            break;
+                    }
+                    break;
+                case Constants.MESSAGE_WRITE:
+                    byte[] writeBuf = (byte[]) msg.obj;
+                    // construct a string from the buffer
+                    String writeMessage = new String(writeBuf);
+
+                    break;
+                case Constants.MESSAGE_READ:
+                    byte[] readBuf = (byte[]) msg.obj;
+                    // construct a string from the valid bytes in the buffer
+                    String readMessage = new String(readBuf, 0, msg.arg1);
+                    break;
+                case Constants.MESSAGE_DEVICE_NAME:
+                    // save the connected device's name
+                    mConnectedDeviceName = msg.getData().getString(Constants.DEVICE_NAME);
+                    if (null != getApplicationContext()) {
+                        Toast.makeText(getApplicationContext(), "Connected to "
+                                + mConnectedDeviceName, Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+                case Constants.MESSAGE_TOAST:
+                    if (null != getApplicationContext()) {
+                        Toast.makeText(getApplicationContext(), msg.getData().getString(Constants.TOAST),
+                                Toast.LENGTH_SHORT).show();
+                    }
+                    break;
+            }
+        }
+    };
+
+
 }

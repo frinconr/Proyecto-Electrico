@@ -14,7 +14,6 @@ import android.widget.ListAdapter;
 public class BTDevicesDialogFragment extends DialogFragment {
 
     private ListAdapter mListAdapter;
-   // private Integer chosenDevice = -1;
 
     public interface NoticeDialogListener {
         void onClickBTDevices (DialogFragment dialog, int chosenDevice);
