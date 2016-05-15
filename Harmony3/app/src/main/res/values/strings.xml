@@ -13,4 +13,8 @@
     <string name="none_found">No devices found</string>
     <string name="Discover_device">Discover your device for 300s</string>
     <string name="bt_not_enabled_leaving">Bluetooth not enabled. Leaving the aplication</string>
+    <string name="title_connected_to">Connected to</string>
+    <string name="title_connecting">Connecting...</string>
+    <string name="title_not_connected">Not Connected</string>
+    <string name="not_connected">Device not connected</string>
 </resources>

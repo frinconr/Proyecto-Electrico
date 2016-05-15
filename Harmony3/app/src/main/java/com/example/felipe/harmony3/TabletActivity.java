@@ -1,5 +1,6 @@
 package com.example.felipe.harmony3;
 
+import android.support.v7.app.ActionBar;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -46,7 +47,9 @@ public class TabletActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tablet);
 
         CheckBT();
-
+       /* if(getActionBar()!=null) {
+            getActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_TITLE);
+        }*/
     }
 
     @Override
@@ -105,7 +108,6 @@ public class TabletActivity extends AppCompatActivity {
             case R.id.devices_list:
                 // Launch the DeviceListActivity to see devices and do scan
                 Intent serverIntent = new Intent(TabletActivity.this, DeviceListActivity.class);
-                //TabletActivity.this.startActivity(serverIntent);
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_INSECURE);
                 break;
             case R.id.Discover_device:
@@ -121,18 +123,12 @@ public class TabletActivity extends AppCompatActivity {
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
                     connectDevice(data, true);
-                    //Toast.makeText(getApplicationContext(), "Ya Devolvi algo de la lista :)",Toast.LENGTH_SHORT).show();
                 }
                 break;
             case REQUEST_CONNECT_DEVICE_INSECURE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                   // try {
                         connectDevice(data, false);
-                   // } catch (Exception e){
-                    //    Toast.makeText(getApplicationContext(), "Unable to connect device",Toast.LENGTH_SHORT).show();
-                    //}
-                    //Toast.makeText(getApplicationContext(), "Ya Devolvi algo de la lista :)",Toast.LENGTH_SHORT).show();
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -163,15 +159,15 @@ public class TabletActivity extends AppCompatActivity {
                 case Constants.MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
                         case BluetoothChatService.STATE_CONNECTED:
-                            //setStatus(getString(R.string.title_connected_to, mConnectedDeviceName));
+                            setStatus(getString(R.string.title_connected_to)+ " " + mConnectedDeviceName);
                             //mConversationArrayAdapter.clear();
                             break;
                         case BluetoothChatService.STATE_CONNECTING:
-                            //setStatus(R.string.title_connecting);
+                            setStatus(R.string.title_connecting);
                             break;
                         case BluetoothChatService.STATE_LISTEN:
                         case BluetoothChatService.STATE_NONE:
-                            //setStatus(R.string.title_not_connected);
+                            setStatus(R.string.title_not_connected);
                             break;
                     }
                     break;
@@ -185,6 +181,7 @@ public class TabletActivity extends AppCompatActivity {
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
+                    Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
                    // mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
@@ -261,6 +258,37 @@ public class TabletActivity extends AppCompatActivity {
 
         // Initialize the buffer for outgoing messages
         //mOutStringBuffer = new StringBuffer("");
+    }
+
+    /**
+     * Updates the status on the action bar.
+     *
+     * @param resId a string resource ID
+     */
+    private void setStatus(int resId) {
+
+        final ActionBar actionBar = getSupportActionBar();
+
+        if (null == actionBar) {
+            return;
+        }
+
+        actionBar.setSubtitle(resId);
+    }
+    /**
+     * Updates the status on the action bar.
+     *
+     * @param subTitle status
+     */
+    private void setStatus(CharSequence subTitle) {
+
+        final ActionBar actionBar = getSupportActionBar();
+
+
+        if (null == actionBar) {
+            return;
+        }
+        actionBar.setSubtitle(subTitle);
     }
 
 }
