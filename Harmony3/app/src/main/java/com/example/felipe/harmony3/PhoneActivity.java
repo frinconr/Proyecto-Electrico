@@ -12,6 +12,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
@@ -270,11 +271,21 @@ public class PhoneActivity extends AppCompatActivity {
 
         // Initialize the notes buttons
         Button LA_button = (Button) findViewById(R.id.La_button);
+
         assert LA_button != null;
-        LA_button.setOnClickListener(new View.OnClickListener() {
+        LA_button.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onClick(View v) {
-                sendMessage("1");
+            public boolean onTouch(View v, MotionEvent event) {
+
+                if(event.getAction()==MotionEvent.ACTION_UP){
+                    sendMessage("0");
+                    Toast.makeText(getApplicationContext(), "0", Toast.LENGTH_SHORT).show();
+                }else if(event.getAction()==MotionEvent.ACTION_DOWN){
+                    sendMessage("1");
+                    Toast.makeText(getApplicationContext(), "1", Toast.LENGTH_SHORT).show();
+                }
+
+                return false;
             }
         });
     }

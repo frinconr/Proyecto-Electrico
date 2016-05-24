@@ -1,5 +1,8 @@
 package com.example.felipe.harmony3;
 
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.support.v7.app.ActionBar;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -9,9 +12,14 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.text.style.ImageSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 import android.widget.Toast;
 
 public class TabletActivity extends AppCompatActivity {
@@ -40,6 +48,16 @@ public class TabletActivity extends AppCompatActivity {
      */
     private String mConnectedDeviceName = null;
 
+    /**
+     * Status from the phone activity button
+     */
+    private String mPhoneButtonStatus = "0";
+
+
+    /**
+     * Status from the phone activity button
+     */
+    private boolean IsPlaying = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -47,9 +65,9 @@ public class TabletActivity extends AppCompatActivity {
         setContentView(R.layout.activity_tablet);
 
         CheckBT();
-       /* if(getActionBar()!=null) {
-            getActionBar().setDisplayOptions(ActionBar.DISPLAY_SHOW_TITLE);
-        }*/
+
+
+
     }
 
     @Override
@@ -181,7 +199,9 @@ public class TabletActivity extends AppCompatActivity {
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-                    Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
+
+                    CheckPhoneStatus(readMessage);
+                    //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
                    // mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
@@ -256,6 +276,69 @@ public class TabletActivity extends AppCompatActivity {
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new BluetoothChatService(this, mHandler);
 
+        // Initialize the notes buttons
+        Button Inhale_button = (Button) findViewById(R.id.inhale_button);
+        final Button Exhale_button = (Button) findViewById(R.id.exhale_button);
+
+        assert Inhale_button != null;
+        Inhale_button.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                if(event.getAction()==MotionEvent.ACTION_UP){
+
+                    if (Exhale_button != null) {
+                        Exhale_button.setEnabled(true);
+                    }
+
+                    IsPlaying = false;
+                    Log.d(TAG, "NADA");
+
+                }else if(event.getAction()==MotionEvent.ACTION_DOWN){
+
+                    if (Exhale_button != null) {
+                        Exhale_button.setEnabled(false);
+                    }
+                    if(mPhoneButtonStatus.equals("1")){
+                        IsPlaying = true;
+                        new Thread(new MusicTask()).start();
+                        Log.d(TAG, "SONANDO");
+                    }
+                }else if(event.getAction()==MotionEvent.ACTION_MOVE){
+                    //Toast.makeText(getApplicationContext(), "Moving", Toast.LENGTH_SHORT).show();
+
+                }
+
+                return false;
+            }
+        });
+
+
+
+        assert Exhale_button != null;
+        Exhale_button.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+
+                if(event.getAction()==MotionEvent.ACTION_UP){
+
+                    //mPhoneButtonStatus = "0";
+                    //Log.d(TAG, "NADA");
+
+                }else if(event.getAction()==MotionEvent.ACTION_DOWN){
+
+                    Toast.makeText(getApplicationContext(), "EXHALE", Toast.LENGTH_SHORT).show();
+                    /// Log.d(TAG, "SONANDO");
+
+                }else if(event.getAction()==MotionEvent.ACTION_MOVE){
+                    //Toast.makeText(getApplicationContext(), "Moving", Toast.LENGTH_SHORT).show();
+
+                }
+
+                return false;
+            }
+        });
+
         // Initialize the buffer for outgoing messages
         //mOutStringBuffer = new StringBuffer("");
     }
@@ -289,6 +372,47 @@ public class TabletActivity extends AppCompatActivity {
             return;
         }
         actionBar.setSubtitle(subTitle);
+    }
+
+    private void CheckPhoneStatus(String State){
+        if(State.equals("0")) {
+            Log.d(TAG, "NADA");
+            IsPlaying = false;
+            mPhoneButtonStatus = "0";
+        }else if(State.equals("1")) {
+            mPhoneButtonStatus = "1";
+        }
+    }
+
+
+    class MusicTask implements Runnable{
+    @Override
+        public void run(){
+            int SamplingRate = 44100;
+            int buffer_size = AudioTrack.getMinBufferSize(SamplingRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            AudioTrack mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SamplingRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, buffer_size, AudioTrack.MODE_STREAM);
+            short samples[] = new short[buffer_size];
+            int amp = 10000;
+            double twopi = 8.*Math.atan(1.);
+            double fr = 440.f;
+            double ph = 0.0;
+
+            // start audio
+            mAudioTrack.play();
+
+            // synthesis loop
+            while(IsPlaying){
+
+                for(int i=0; i < buffer_size; i++){
+                    samples[i] = (short) (amp*Math.sin(ph));
+                    ph += twopi*fr/SamplingRate;
+                }
+                mAudioTrack.write(samples, 0, buffer_size);
+            }
+            mAudioTrack.stop();
+            mAudioTrack.release();
+
+        }
     }
 
 }
