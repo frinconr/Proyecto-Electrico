@@ -1,5 +1,6 @@
 package com.example.felipe.harmony3;
 
+import android.annotation.SuppressLint;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
@@ -12,16 +13,15 @@ import android.os.Handler;
 import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.text.style.ImageSpan;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.TextView;
 import android.widget.Toast;
 
+@SuppressLint("HandlerLeak")
 public class TabletActivity extends AppCompatActivity {
 
     private static final String TAG = "TabletActivity";
@@ -29,9 +29,8 @@ public class TabletActivity extends AppCompatActivity {
 
 
     // Intent request codes
-    private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
-    private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
-    private static final int REQUEST_ENABLE_BT = 3;
+    private static final int REQUEST_CONNECT_DEVICE = 1;
+    private static final int REQUEST_ENABLE_BT = 2;
 
     /**
      * Local Bluetooth adapter
@@ -49,6 +48,11 @@ public class TabletActivity extends AppCompatActivity {
     private String mConnectedDeviceName = null;
 
     /**
+     * String buffer for outgoing messages
+     */
+    private StringBuffer mOutStringBuffer;
+
+    /**
      * Status from the phone activity button
      */
     private String mPhoneButtonStatus = "0";
@@ -64,10 +68,12 @@ public class TabletActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tablet);
 
-        CheckBT();
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
-
-
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(getApplicationContext(), "Bluetooth not available on your device", Toast.LENGTH_SHORT).show();
+            finish();
+        }
     }
 
     @Override
@@ -80,6 +86,14 @@ public class TabletActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         } else if (mChatService == null) {
             setupChat();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mChatService != null) {
+            mChatService.stop();
         }
     }
 
@@ -100,13 +114,7 @@ public class TabletActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mChatService != null) {
-            mChatService.stop();
-        }
-    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -126,27 +134,22 @@ public class TabletActivity extends AppCompatActivity {
             case R.id.devices_list:
                 // Launch the DeviceListActivity to see devices and do scan
                 Intent serverIntent = new Intent(TabletActivity.this, DeviceListActivity.class);
-                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_INSECURE);
-                break;
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                return true;
             case R.id.Discover_device:
                 ensureDiscoverable();
-                break;
+                return true;
         }
-        return super.onOptionsItemSelected(item);
+        return false;
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case REQUEST_CONNECT_DEVICE_SECURE:
+
+            case REQUEST_CONNECT_DEVICE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    connectDevice(data, true);
-                }
-                break;
-            case REQUEST_CONNECT_DEVICE_INSECURE:
-                // When DeviceListActivity returns with a device to connect
-                if (resultCode == Activity.RESULT_OK) {
-                        connectDevice(data, false);
+                        connectDevice(data);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -201,7 +204,7 @@ public class TabletActivity extends AppCompatActivity {
                     String readMessage = new String(readBuf, 0, msg.arg1);
 
                     CheckPhoneStatus(readMessage);
-                    //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
                    // mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
@@ -224,21 +227,6 @@ public class TabletActivity extends AppCompatActivity {
 
 
 
-
-
-    /**
-     * Checks if the device has bluetooth to run the application
-     */
-    private void CheckBT() {
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(getApplicationContext(), "Bluetooth not available on your device", Toast.LENGTH_SHORT).show();
-            finish();
-        }
-    }
-
     /**
      * Makes this device discoverable.
      */
@@ -255,16 +243,16 @@ public class TabletActivity extends AppCompatActivity {
      * Establish connection with other divice
      *
      * @param data   An {@link Intent} with {@link DeviceListActivity#EXTRA_DEVICE_ADDRESS} extra.
-     * @param secure Socket Security type - Secure (true) , Insecure (false)
+     *
      */
-    private void connectDevice(Intent data, boolean secure) {
+    private void connectDevice(Intent data) {
         // Get the device MAC address
         String address = data.getExtras()
                 .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         // Attempt to connect to the device
-        mChatService.connect(device, secure);
+        mChatService.connect(device);
     }
 
     /**
@@ -273,74 +261,85 @@ public class TabletActivity extends AppCompatActivity {
     private void setupChat() {
         Log.d(TAG, "setupChat()");
 
-        // Initialize the BluetoothChatService to perform bluetooth connections
-        mChatService = new BluetoothChatService(this, mHandler);
-
         // Initialize the notes buttons
         Button Inhale_button = (Button) findViewById(R.id.inhale_button);
-        final Button Exhale_button = (Button) findViewById(R.id.exhale_button);
 
-        assert Inhale_button != null;
-        Inhale_button.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
+        if (Inhale_button != null) {
+            Inhale_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
 
-                if(event.getAction()==MotionEvent.ACTION_UP){
+                    if(event.getAction()==MotionEvent.ACTION_UP){
 
-                    if (Exhale_button != null) {
-                        Exhale_button.setEnabled(true);
+                    /*    if (Exhale_button != null) {
+                            Exhale_button.setEnabled(true);
+                        }*/
+
+                        IsPlaying = false;
+                        Log.d(TAG, "NADA");
+
+                    }else if(event.getAction()==MotionEvent.ACTION_DOWN){
+
+                   /*     if (Exhale_button != null) {
+                            Exhale_button.setEnabled(false);
+                        }*/
+                        if(mPhoneButtonStatus.equals("1")){
+                            IsPlaying = true;
+                            Log.d(TAG, "SONANDO");
+                            new Thread(new MusicTask(Notes.A1*Math.pow(2,3))).start();
+
+                        }
+                    }else if(event.getAction()==MotionEvent.ACTION_MOVE){
+                        //Toast.makeText(getApplicationContext(), "Moving", Toast.LENGTH_SHORT).show();
+
                     }
 
-                    IsPlaying = false;
-                    Log.d(TAG, "NADA");
-
-                }else if(event.getAction()==MotionEvent.ACTION_DOWN){
-
-                    if (Exhale_button != null) {
-                        Exhale_button.setEnabled(false);
-                    }
-                    if(mPhoneButtonStatus.equals("1")){
-                        IsPlaying = true;
-                        new Thread(new MusicTask()).start();
-                        Log.d(TAG, "SONANDO");
-                    }
-                }else if(event.getAction()==MotionEvent.ACTION_MOVE){
-                    //Toast.makeText(getApplicationContext(), "Moving", Toast.LENGTH_SHORT).show();
-
+                    return false;
                 }
+            });
 
-                return false;
-            }
-        });
+            // Initialize the BluetoothChatService to perform bluetooth connections
+            mChatService = new BluetoothChatService(this, mHandler);
+            mOutStringBuffer = new StringBuffer("");
+        }
 
+        Button Exhale_button = (Button) findViewById(R.id.exhale_button);
 
+        if (Exhale_button != null) {
+            Exhale_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
 
-        assert Exhale_button != null;
-        Exhale_button.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
+                    if(event.getAction()==MotionEvent.ACTION_UP){
 
-                if(event.getAction()==MotionEvent.ACTION_UP){
+                    /*    if (Inhale_button != null) {
+                            Inhale_button.setEnabled(true);
+                        }*/
 
-                    //mPhoneButtonStatus = "0";
-                    //Log.d(TAG, "NADA");
+                        IsPlaying = false;
+                        Log.d(TAG, "NADA");
 
-                }else if(event.getAction()==MotionEvent.ACTION_DOWN){
+                    }else if(event.getAction()==MotionEvent.ACTION_DOWN){
 
-                    Toast.makeText(getApplicationContext(), "EXHALE", Toast.LENGTH_SHORT).show();
-                    /// Log.d(TAG, "SONANDO");
+                      /*  if (Inhale_button != null) {
+                            Inhale_button.setEnabled(false);
+                        }*/
+                        if(mPhoneButtonStatus.equals("1")){
+                            IsPlaying = true;
+                            new Thread(new MusicTask(Notes.C1*Math.pow(2,3))).start();
+                            Log.d(TAG, "SONANDO");
+                        }
+                    }else if(event.getAction()==MotionEvent.ACTION_MOVE){
+                        Log.d(TAG, "Moviendose");
+                        //Toast.makeText(getApplicationContext(), "Moving", Toast.LENGTH_SHORT).show();
 
-                }else if(event.getAction()==MotionEvent.ACTION_MOVE){
-                    //Toast.makeText(getApplicationContext(), "Moving", Toast.LENGTH_SHORT).show();
+                    }
 
+                    return false;
                 }
+            });
+        }
 
-                return false;
-            }
-        });
-
-        // Initialize the buffer for outgoing messages
-        //mOutStringBuffer = new StringBuffer("");
     }
 
     /**
@@ -375,8 +374,8 @@ public class TabletActivity extends AppCompatActivity {
     }
 
     private void CheckPhoneStatus(String State){
+        Log.d(TAG, "State Change");
         if(State.equals("0")) {
-            Log.d(TAG, "NADA");
             IsPlaying = false;
             mPhoneButtonStatus = "0";
         }else if(State.equals("1")) {
@@ -385,7 +384,15 @@ public class TabletActivity extends AppCompatActivity {
     }
 
 
+
     class MusicTask implements Runnable{
+
+        private double Frequency;
+
+        public MusicTask(double mFrequency){
+            this.Frequency  = mFrequency;
+        }
+
     @Override
         public void run(){
             int SamplingRate = 44100;
@@ -394,7 +401,7 @@ public class TabletActivity extends AppCompatActivity {
             short samples[] = new short[buffer_size];
             int amp = 10000;
             double twopi = 8.*Math.atan(1.);
-            double fr = 440.f;
+
             double ph = 0.0;
 
             // start audio
@@ -405,7 +412,7 @@ public class TabletActivity extends AppCompatActivity {
 
                 for(int i=0; i < buffer_size; i++){
                     samples[i] = (short) (amp*Math.sin(ph));
-                    ph += twopi*fr/SamplingRate;
+                    ph += twopi*Frequency/SamplingRate;
                 }
                 mAudioTrack.write(samples, 0, buffer_size);
             }

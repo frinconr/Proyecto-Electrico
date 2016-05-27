@@ -1,6 +1,7 @@
 package com.example.felipe.harmony3;
 
 
+import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -16,18 +17,17 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
-
+@SuppressLint("HandlerLeak")
 public class PhoneActivity extends AppCompatActivity {
 
 
-    private static final String TAG = "TabletActivity";
+    private static final String TAG = "PhoneActivity";
 
 
 
     // Intent request codes
-    private static final int REQUEST_CONNECT_DEVICE_SECURE = 1;
-    private static final int REQUEST_CONNECT_DEVICE_INSECURE = 2;
-    private static final int REQUEST_ENABLE_BT = 3;
+    private static final int REQUEST_CONNECT_DEVICE= 1;
+    private static final int REQUEST_ENABLE_BT = 2;
 
     /**
      * Local Bluetooth adapter
@@ -49,11 +49,24 @@ public class PhoneActivity extends AppCompatActivity {
      */
     private StringBuffer mOutStringBuffer;
 
+    /**
+     * Name of the connected device
+     */
+    private Button LA_button;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_phone);
-        CheckBT();
+        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+
+        if (mBluetoothAdapter == null) {
+            Toast.makeText(getApplicationContext(), "Bluetooth not available on your device", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+        // Initialize the notes buttons
+        LA_button = (Button) findViewById(R.id.La_button);
     }
 
 
@@ -67,6 +80,14 @@ public class PhoneActivity extends AppCompatActivity {
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
         } else if (mChatService == null) {
             setupChat();
+        }
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        if (mChatService != null) {
+            mChatService.stop();
         }
     }
 
@@ -87,13 +108,7 @@ public class PhoneActivity extends AppCompatActivity {
         }
     }
 
-    @Override
-    public void onDestroy() {
-        super.onDestroy();
-        if (mChatService != null) {
-            mChatService.stop();
-        }
-    }
+
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
@@ -113,33 +128,22 @@ public class PhoneActivity extends AppCompatActivity {
             case R.id.devices_list:
                 // Launch the DeviceListActivity to see devices and do scan
                 Intent serverIntent = new Intent(PhoneActivity.this, DeviceListActivity.class);
-                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE_INSECURE);
-                break;
+                startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
+                return true;
             case R.id.Discover_device:
                 ensureDiscoverable();
-                break;
+                return true;
         }
-        return super.onOptionsItemSelected(item);
+        return false;
     }
 
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
-            case REQUEST_CONNECT_DEVICE_SECURE:
+
+            case REQUEST_CONNECT_DEVICE:
                 // When DeviceListActivity returns with a device to connect
                 if (resultCode == Activity.RESULT_OK) {
-                    connectDevice(data, true);
-                    //Toast.makeText(getApplicationContext(), "Ya Devolvi algo de la lista :)",Toast.LENGTH_SHORT).show();
-                }
-                break;
-            case REQUEST_CONNECT_DEVICE_INSECURE:
-                // When DeviceListActivity returns with a device to connect
-                if (resultCode == Activity.RESULT_OK) {
-                    // try {
-                    connectDevice(data, false);
-                    // } catch (Exception e){
-                    //    Toast.makeText(getApplicationContext(), "Unable to connect device",Toast.LENGTH_SHORT).show();
-                    //}
-                    //Toast.makeText(getApplicationContext(), "Ya Devolvi algo de la lista :)",Toast.LENGTH_SHORT).show();
+                    connectDevice(data);
                 }
                 break;
             case REQUEST_ENABLE_BT:
@@ -171,7 +175,6 @@ public class PhoneActivity extends AppCompatActivity {
                     switch (msg.arg1) {
                         case BluetoothChatService.STATE_CONNECTED:
                             setStatus(getString(R.string.title_connected_to)+" "+mConnectedDeviceName);
-                            //mConversationArrayAdapter.clear();
                             break;
                         case BluetoothChatService.STATE_CONNECTING:
                             setStatus(R.string.title_connecting);
@@ -186,13 +189,12 @@ public class PhoneActivity extends AppCompatActivity {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    //mConversationArrayAdapter.add("Me:  " + writeMessage);
+                    Log.d(TAG, writeMessage);
                     break;
                 case Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-                    // mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
                     // save the connected device's name
@@ -214,21 +216,6 @@ public class PhoneActivity extends AppCompatActivity {
 
 
 
-
-
-    /**
-     * Checks if the device has bluetooth to run the application
-     */
-    private void CheckBT() {
-
-        mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
-
-        if (mBluetoothAdapter == null) {
-            Toast.makeText(getApplicationContext(), "Bluetooth not available on your device", Toast.LENGTH_SHORT).show();
-            finish();
-        }
-    }
-
     /**
      * Makes this device discoverable.
      */
@@ -245,16 +232,16 @@ public class PhoneActivity extends AppCompatActivity {
      * Establish connection with other divice
      *
      * @param data   An {@link Intent} with {@link DeviceListActivity#EXTRA_DEVICE_ADDRESS} extra.
-     * @param secure Socket Security type - Secure (true) , Insecure (false)
+     *
      */
-    private void connectDevice(Intent data, boolean secure) {
+    private void connectDevice(Intent data) {
         // Get the device MAC address
         String address = data.getExtras()
                 .getString(DeviceListActivity.EXTRA_DEVICE_ADDRESS);
         // Get the BluetoothDevice object
         BluetoothDevice device = mBluetoothAdapter.getRemoteDevice(address);
         // Attempt to connect to the device
-        mChatService.connect(device, secure);
+        mChatService.connect(device);
     }
 
     /**
@@ -263,31 +250,26 @@ public class PhoneActivity extends AppCompatActivity {
     private void setupChat() {
         Log.d(TAG, "setupChat()");
 
+        if (LA_button != null) {
+            LA_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if(event.getAction()==MotionEvent.ACTION_UP){
+                        sendMessage("0");
+
+                    }else if(event.getAction()==MotionEvent.ACTION_DOWN){
+                        sendMessage("1");
+                    }
+
+                    return false;
+                }
+            });
+        }
+
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new BluetoothChatService(this, mHandler);
-
-        // Initialize the buffer for outgoing messages
         mOutStringBuffer = new StringBuffer("");
-
-        // Initialize the notes buttons
-        Button LA_button = (Button) findViewById(R.id.La_button);
-
-        assert LA_button != null;
-        LA_button.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-
-                if(event.getAction()==MotionEvent.ACTION_UP){
-                    sendMessage("0");
-                    Toast.makeText(getApplicationContext(), "0", Toast.LENGTH_SHORT).show();
-                }else if(event.getAction()==MotionEvent.ACTION_DOWN){
-                    sendMessage("1");
-                    Toast.makeText(getApplicationContext(), "1", Toast.LENGTH_SHORT).show();
-                }
-
-                return false;
-            }
-        });
     }
 
     /**
@@ -335,11 +317,8 @@ public class PhoneActivity extends AppCompatActivity {
 
             // Get the message bytes and tell the BluetoothChatService to write
             byte[] send = message.getBytes();
-            mChatService.write(send);
-
-            // Reset out string buffer to zero and clear the edit text field
-            mOutStringBuffer.setLength(0);
-
+        mChatService.write(send);
+        mOutStringBuffer.setLength(0);
 
     }
 
