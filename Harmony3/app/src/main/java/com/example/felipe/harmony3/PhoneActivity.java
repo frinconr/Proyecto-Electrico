@@ -18,6 +18,7 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.Toast;
 @SuppressLint("HandlerLeak")
+
 public class PhoneActivity extends AppCompatActivity {
 
 
@@ -45,14 +46,24 @@ public class PhoneActivity extends AppCompatActivity {
     private String mConnectedDeviceName = null;
 
     /**
-     * String buffer for outgoing messages
+     * Char array representing button state: 1-> pressed 0->released
      */
-    private StringBuffer mOutStringBuffer;
+    private char[] mButtonsState= {'0','0','0','0','0','0','0','0','0','0'};
+
 
     /**
-     * Name of the connected device
+     * Notes buttons
      */
-    private Button LA_button;
+    private Button first_button;
+    private Button second_button;
+    private Button third_button;
+    private Button fourth_button;
+    private Button fifth_button;
+    private Button sixth_button;
+    private Button seventh_button;
+    private Button eighth_button;
+    private Button nineth_button;
+    private Button tenth_button;
 
 
     @Override
@@ -66,7 +77,17 @@ public class PhoneActivity extends AppCompatActivity {
             finish();
         }
         // Initialize the notes buttons
-        LA_button = (Button) findViewById(R.id.La_button);
+        first_button    = (Button) findViewById(R.id.first_button);
+        second_button   = (Button) findViewById(R.id.second_button);
+        third_button    = (Button) findViewById(R.id.third_button);
+        fourth_button   = (Button) findViewById(R.id.fourth_button);
+        fifth_button    = (Button) findViewById(R.id.fifth_button);
+        sixth_button    = (Button) findViewById(R.id.sixth_button);
+        seventh_button  = (Button) findViewById(R.id.seventh_button);
+        eighth_button   = (Button) findViewById(R.id.eighth_button);
+        nineth_button   = (Button) findViewById(R.id.nineth_button);
+        tenth_button    = (Button) findViewById(R.id.tenth_button);
+
     }
 
 
@@ -249,17 +270,20 @@ public class PhoneActivity extends AppCompatActivity {
      */
     private void setupChat() {
         Log.d(TAG, "setupChat()");
+    //************************************ FIRST BUTTON ********************************************
 
-        if (LA_button != null) {
-            LA_button.setOnTouchListener(new View.OnTouchListener() {
+        if (first_button != null) {
+            first_button.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
 
-                    if(event.getAction()==MotionEvent.ACTION_UP){
-                        sendMessage("0");
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[0]='0';
+                        sendUpdatedState();
 
-                    }else if(event.getAction()==MotionEvent.ACTION_DOWN){
-                        sendMessage("1");
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[0]='1';
+                        sendUpdatedState();
                     }
 
                     return false;
@@ -267,10 +291,209 @@ public class PhoneActivity extends AppCompatActivity {
             });
         }
 
+    //************************************ SECOND BUTTON ********************************************
+        if (second_button != null) {
+            second_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[1]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[1]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+    //************************************ THIRD BUTTON ********************************************
+        if (third_button != null) {
+            third_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[2]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[2]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+    //************************************ THIRD BUTTON ********************************************
+        if (fourth_button != null) {
+            fourth_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[3]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[3]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+    //************************************ FOURTH BUTTON ********************************************
+        if (fourth_button != null) {
+            fourth_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[3]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[3]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+
+    //************************************ FIFTH BUTTON ********************************************
+        if (fifth_button != null) {
+            fifth_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[4]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[4]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+    //************************************ SIXTH BUTTON ********************************************
+        if (sixth_button != null) {
+            sixth_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[5]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[5]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+
+    //************************************ SEVENTH BUTTON ********************************************
+        if (seventh_button != null) {
+            seventh_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[6] = '0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[6] = '1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+
+    //************************************ EIGHTH BUTTON ********************************************
+        if (eighth_button != null) {
+            eighth_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[7]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[7]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+
+    //************************************ NINETH BUTTON ********************************************
+        if (nineth_button != null) {
+            nineth_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[8]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[8]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+
+    //************************************ TENTH BUTTON ********************************************
+        if (tenth_button != null) {
+            tenth_button.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+
+                    if (event.getAction() == MotionEvent.ACTION_UP) {
+                        mButtonsState[9]='0';
+                        sendUpdatedState();
+
+                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                        mButtonsState[9]='1';
+                        sendUpdatedState();
+                    }
+
+                    return false;
+                }
+            });
+        }
+
+
+
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new BluetoothChatService(this, mHandler);
-        mOutStringBuffer = new StringBuffer("");
+
     }
+
 
     /**
      * Updates the status on the action bar.
@@ -318,8 +541,16 @@ public class PhoneActivity extends AppCompatActivity {
             // Get the message bytes and tell the BluetoothChatService to write
             byte[] send = message.getBytes();
         mChatService.write(send);
-        mOutStringBuffer.setLength(0);
 
+    }
+
+    /**
+     * Sends the state of the note buttons each time they change
+     */
+    private void sendUpdatedState() {
+        String state = new String(mButtonsState);
+        Log.d(TAG, state);
+        sendMessage(state);
     }
 
 

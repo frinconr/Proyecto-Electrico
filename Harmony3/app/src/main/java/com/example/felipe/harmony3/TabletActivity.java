@@ -47,21 +47,28 @@ public class TabletActivity extends AppCompatActivity {
      */
     private String mConnectedDeviceName = null;
 
-    /**
-     * String buffer for outgoing messages
-     */
-    private StringBuffer mOutStringBuffer;
 
     /**
-     * Status from the phone activity button
+     * Char array representing button state: 1-> pressed 0->released
      */
-    private String mPhoneButtonStatus = "0";
+    private char[] mPhoneButtonStatus= {'0','0','0','0','0','0','0','0','0','0'};
 
 
     /**
      * Status from the phone activity button
      */
-    private boolean IsPlaying = false;
+    private boolean IsInhalePlaying = false;
+
+    /**
+     * Status from the phone activity button
+     */
+    private boolean IsExhalePlaying = false;
+
+
+    /**
+     * Status from the phone activity button
+     */
+    private boolean IsPlayingAnyButton = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -202,9 +209,8 @@ public class TabletActivity extends AppCompatActivity {
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
-
-                    CheckPhoneStatus(readMessage);
-                    Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
+                    UpdatePhoneStatus(readMessage);
+                    //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
                    // mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
@@ -271,22 +277,15 @@ public class TabletActivity extends AppCompatActivity {
 
                     if(event.getAction()==MotionEvent.ACTION_UP){
 
-                    /*    if (Exhale_button != null) {
-                            Exhale_button.setEnabled(true);
-                        }*/
-
-                        IsPlaying = false;
+                        IsInhalePlaying = false;
                         Log.d(TAG, "NADA");
 
                     }else if(event.getAction()==MotionEvent.ACTION_DOWN){
 
-                   /*     if (Exhale_button != null) {
-                            Exhale_button.setEnabled(false);
-                        }*/
-                        if(mPhoneButtonStatus.equals("1")){
-                            IsPlaying = true;
+                        if(IsPlayingAnyButton){
+                            IsInhalePlaying = true;
                             Log.d(TAG, "SONANDO");
-                            new Thread(new MusicTask(Notes.A1*Math.pow(2,3))).start();
+                            new Thread(new MusicTask(true)).start();
 
                         }
                     }else if(event.getAction()==MotionEvent.ACTION_MOVE){
@@ -300,7 +299,6 @@ public class TabletActivity extends AppCompatActivity {
 
             // Initialize the BluetoothChatService to perform bluetooth connections
             mChatService = new BluetoothChatService(this, mHandler);
-            mOutStringBuffer = new StringBuffer("");
         }
 
         Button Exhale_button = (Button) findViewById(R.id.exhale_button);
@@ -312,21 +310,14 @@ public class TabletActivity extends AppCompatActivity {
 
                     if(event.getAction()==MotionEvent.ACTION_UP){
 
-                    /*    if (Inhale_button != null) {
-                            Inhale_button.setEnabled(true);
-                        }*/
-
-                        IsPlaying = false;
+                        IsExhalePlaying = false;
                         Log.d(TAG, "NADA");
 
                     }else if(event.getAction()==MotionEvent.ACTION_DOWN){
 
-                      /*  if (Inhale_button != null) {
-                            Inhale_button.setEnabled(false);
-                        }*/
-                        if(mPhoneButtonStatus.equals("1")){
-                            IsPlaying = true;
-                            new Thread(new MusicTask(Notes.C1*Math.pow(2,3))).start();
+                        if(IsPlayingAnyButton){
+                            IsExhalePlaying = true;
+                            new Thread(new MusicTask(false)).start();
                             Log.d(TAG, "SONANDO");
                         }
                     }else if(event.getAction()==MotionEvent.ACTION_MOVE){
@@ -373,24 +364,27 @@ public class TabletActivity extends AppCompatActivity {
         actionBar.setSubtitle(subTitle);
     }
 
-    private void CheckPhoneStatus(String State){
-        Log.d(TAG, "State Change");
-        if(State.equals("0")) {
-            IsPlaying = false;
-            mPhoneButtonStatus = "0";
-        }else if(State.equals("1")) {
-            mPhoneButtonStatus = "1";
-        }
-    }
 
+    private void UpdatePhoneStatus(String state){
+
+        if(state.equals("0000000000")){
+            //IsInhalePlaying = false;
+            //IsExhalePlaying = false;
+            IsPlayingAnyButton = false;
+        } else {
+            IsPlayingAnyButton = true;
+        }
+        mPhoneButtonStatus = state.toCharArray();
+
+    }
 
 
     class MusicTask implements Runnable{
 
-        private double Frequency;
+        private boolean InhaleOrExhale;
 
-        public MusicTask(double mFrequency){
-            this.Frequency  = mFrequency;
+        public MusicTask(boolean mInhaleOrExhale){
+            this.InhaleOrExhale  = mInhaleOrExhale;
         }
 
     @Override
@@ -398,23 +392,138 @@ public class TabletActivity extends AppCompatActivity {
             int SamplingRate = 44100;
             int buffer_size = AudioTrack.getMinBufferSize(SamplingRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
             AudioTrack mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SamplingRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, buffer_size, AudioTrack.MODE_STREAM);
-            short samples[] = new short[buffer_size];
+            short samples_button1[] = new short[buffer_size];
+            short samples_button2[] = new short[buffer_size];
+            short samples_button3[] = new short[buffer_size];
+            short samples_button4[] = new short[buffer_size];
+            short samples_button5[] = new short[buffer_size];
+            short samples_button6[] = new short[buffer_size];
+            short samples_button7[] = new short[buffer_size];
+            short samples_button8[] = new short[buffer_size];
+            short samples_button9[] = new short[buffer_size];
+            short samples_button10[] = new short[buffer_size];
+            short ResultWave[] = new short[buffer_size];
+
             int amp = 10000;
             double twopi = 8.*Math.atan(1.);
 
-            double ph = 0.0;
+            double Frequency_button1;
+            double Frequency_button2;
+            double Frequency_button3;
+            double Frequency_button4;
+            double Frequency_button5;
+            double Frequency_button6;
+            double Frequency_button7;
+            double Frequency_button8;
+            double Frequency_button9;
+            double Frequency_button10;
+
+            double phase_button1 = 0.0;
+            double phase_button2 = 0.0;
+            double phase_button3 = 0.0;
+            double phase_button4 = 0.0;
+            double phase_button5 = 0.0;
+            double phase_button6 = 0.0;
+            double phase_button7 = 0.0;
+            double phase_button8 = 0.0;
+            double phase_button9 = 0.0;
+            double phase_button10 = 0.0;
 
             // start audio
             mAudioTrack.play();
 
             // synthesis loop
-            while(IsPlaying){
+            while(InhaleOrExhale? IsInhalePlaying:IsExhalePlaying){
 
                 for(int i=0; i < buffer_size; i++){
-                    samples[i] = (short) (amp*Math.sin(ph));
-                    ph += twopi*Frequency/SamplingRate;
+
+                    //************************ FIRST BUTTON SOUNDS *********************************
+                    if(mPhoneButtonStatus[0]=='1'){
+                        Frequency_button1 = InhaleOrExhale? Notes.D1*Math.pow(2,3):Notes.C1*Math.pow(2,3);
+                        samples_button1[i] = (short) (amp*Math.sin(phase_button1));
+                        phase_button1 += twopi*(Frequency_button1)/SamplingRate;
+                    }else{samples_button1[i] = 0;}
+
+                    //************************ SECOND BUTTON SOUNDS ********************************
+                    if(mPhoneButtonStatus[1]=='1'){
+                        Frequency_button2 = InhaleOrExhale? Notes.G1*Math.pow(2,3):Notes.E1*Math.pow(2,3);
+                        samples_button2[i] = (short) (amp*Math.sin(phase_button2));
+                        phase_button2 += twopi*(Frequency_button2)/SamplingRate;
+                    }else{samples_button2[i] = 0;}
+
+                    //************************ THIRD BUTTON SOUNDS *********************************
+                    if(mPhoneButtonStatus[2]=='1'){
+                        Frequency_button3 = InhaleOrExhale? Notes.B1*Math.pow(2,3):Notes.G1*Math.pow(2,3);
+                        samples_button3[i] = (short) (amp*Math.sin(phase_button3));
+                        phase_button3 += twopi*(Frequency_button3)/SamplingRate;
+                    }else{samples_button3[i] = 0;}
+
+                    //************************ FOURTH BUTTON SOUNDS ********************************
+                    if(mPhoneButtonStatus[3]=='1'){
+                        Frequency_button4 = InhaleOrExhale? Notes.D1*Math.pow(2,4):Notes.C1*Math.pow(2,4);
+                        samples_button4[i] = (short) (amp*Math.sin(phase_button4));
+                        phase_button4 += twopi*(Frequency_button4)/SamplingRate;
+                    }else{samples_button4[i] = 0;}
+
+
+                    //************************ FIFTH BUTTON SOUNDS *********************************
+                    if(mPhoneButtonStatus[4]=='1'){
+                        Frequency_button5 = InhaleOrExhale? Notes.F1*Math.pow(2,4):Notes.E1*Math.pow(2,4);
+                        samples_button5[i] = (short) (amp*Math.sin(phase_button5));
+                        phase_button5 += twopi*(Frequency_button5)/SamplingRate;
+                    }else{samples_button5[i] = 0;}
+
+
+                    //************************ SIXTH BUTTON SOUNDS *********************************
+                    if(mPhoneButtonStatus[5]=='1'){
+                        Frequency_button6 = InhaleOrExhale? Notes.A1*Math.pow(2,3):Notes.F1*Math.pow(2,3);
+                        samples_button6[i] = (short) (amp*Math.sin(phase_button6));
+                        phase_button6 += twopi*(Frequency_button6)/SamplingRate;
+                    }else{samples_button6[i] = 0;}
+
+
+                    //************************ SEVENTH BUTTON SOUNDS *******************************
+                    if(mPhoneButtonStatus[6]=='1'){
+                        Frequency_button7 = InhaleOrExhale? Notes.B1*Math.pow(2,4):Notes.C1*Math.pow(2,5);
+                        samples_button7[i] = (short) (amp*Math.sin(phase_button7));
+                        phase_button7 += twopi*(Frequency_button7)/SamplingRate;
+                    }else{samples_button7[i] = 0;}
+
+                    //************************ EIGHTH BUTTON SOUNDS ********************************
+                    if(mPhoneButtonStatus[7]=='1'){
+                        Frequency_button8 = InhaleOrExhale? Notes.D1*Math.pow(2,5):Notes.E1*Math.pow(2,5);
+                        samples_button8[i] = (short) (amp*Math.sin(phase_button8));
+                        phase_button8 += twopi*(Frequency_button8)/SamplingRate;
+                    }else{samples_button8[i] = 0;}
+
+                    //************************ NINETH BUTTON SOUNDS ********************************
+                    if(mPhoneButtonStatus[8]=='1'){
+                        Frequency_button9 = InhaleOrExhale? Notes.F1*Math.pow(2,4):Notes.G1*Math.pow(2,5);
+                        samples_button9[i] = (short) (amp*Math.sin(phase_button9));
+                        phase_button9 += twopi*(Frequency_button9)/SamplingRate;
+                    }else{samples_button9[i] = 0;}
+
+                    //************************ TENTH BUTTON SOUNDS *********************************
+                    if(mPhoneButtonStatus[9]=='1'){
+                        Frequency_button10 = InhaleOrExhale? Notes.A1*Math.pow(2,5):Notes.C1*Math.pow(2,6);
+                        samples_button10[i] = (short) (amp*Math.sin(phase_button10));
+                        phase_button10 += twopi*(Frequency_button10)/SamplingRate;
+                    }else{samples_button10[i] = 0;}
+
+                    ResultWave[i] = (short) (samples_button1[i]
+                                            +samples_button2[i]
+                                            +samples_button3[i]
+                                            +samples_button4[i]
+                                            +samples_button5[i]
+                                            +samples_button6[i]
+                                            +samples_button7[i]
+                                            +samples_button8[i]
+                                            +samples_button9[i]
+                                            +samples_button10[i]);
                 }
-                mAudioTrack.write(samples, 0, buffer_size);
+
+
+                mAudioTrack.write(ResultWave, 0, buffer_size);
             }
             mAudioTrack.stop();
             mAudioTrack.release();
