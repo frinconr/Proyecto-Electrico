@@ -11,21 +11,38 @@
 
     <Button
         android:id="@+id/inhale_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="500dp"
+        android:layout_height="400dp"
         android:text="@string/Inhale"
+        android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
+        android:layout_alignParentStart="true" />
 
     <Button
         android:id="@+id/exhale_button"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_width="500dp"
+        android:layout_height="400dp"
         android:text="@string/Exhale"
-        android:layout_below="@+id/inhale_button"/>
-    <TextView
+        android:layout_alignTop="@+id/inhale_button"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true" />
+
+    <LinearLayout
+        android:orientation="vertical"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:id="@+id/estate"/>
+        android:layout_height="match_parent"
+        android:layout_below="@+id/inhale_button"
+        android:layout_alignLeft="@+id/inhale_button"
+        android:layout_alignStart="@+id/inhale_button"
+        android:weightSum="1">
+
+        <ToggleButton
+            android:layout_width="232dp"
+            android:layout_height="127dp"
+            android:text="Square Effect"
+            android:id="@+id/SquareButton" />
+
+    </LinearLayout>
+
 
 </RelativeLayout>
