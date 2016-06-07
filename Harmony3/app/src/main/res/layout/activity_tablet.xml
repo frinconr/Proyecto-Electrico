@@ -28,7 +28,7 @@
         android:layout_alignParentEnd="true" />
 
     <LinearLayout
-        android:orientation="vertical"
+        android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_below="@+id/inhale_button"
@@ -37,10 +37,25 @@
         android:weightSum="1">
 
         <ToggleButton
-            android:layout_width="232dp"
+            android:layout_width="wrap_content"
             android:layout_height="127dp"
-            android:text="Square Effect"
+            android:textOn="Square Effect On"
+            android:textOff="Square Effect Off"
             android:id="@+id/SquareButton" />
+
+        <ToggleButton
+            android:layout_width="wrap_content"
+            android:layout_height="127dp"
+            android:textOn="Sawtooth Effect On"
+            android:textOff="Sawtooth Effect Off"
+            android:id="@+id/SawtoothButton" />
+
+        <ToggleButton
+            android:layout_width="wrap_content"
+            android:layout_height="127dp"
+            android:textOn="Tringle Effect On"
+            android:textOff="Triangle Effect Off"
+            android:id="@+id/TriangleButton" />
 
     </LinearLayout>
 

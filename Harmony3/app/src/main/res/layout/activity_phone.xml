@@ -10,7 +10,9 @@
     android:paddingRight="@dimen/activity_horizontal_margin"
     android:paddingTop="@dimen/activity_vertical_margin"
     android:background="@drawable/background1"
-    tools:context="com.example.felipe.harmony3.PhoneActivity">
+    tools:context="com.example.felipe.harmony3.PhoneActivity"
+    android:clickable="false"
+    android:focusable="false">
 
         <Button
             android:id="@+id/first_button"
@@ -18,7 +20,7 @@
             android:layout_alignParentLeft="true"
             android:layout_width="175dp"
             android:layout_height="80dp"
-            android:text="1"/>
+            android:text="1" />
 
         <Button
             android:id="@+id/sixth_button"
