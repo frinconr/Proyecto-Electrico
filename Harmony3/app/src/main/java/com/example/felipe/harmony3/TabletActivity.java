@@ -1,6 +1,7 @@
 package com.example.felipe.harmony3;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.graphics.Matrix;
 import android.graphics.Rect;
 import android.media.AudioFormat;
@@ -23,6 +24,7 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.CompoundButton;
+import android.widget.SeekBar;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
@@ -86,6 +88,10 @@ public class TabletActivity extends AppCompatActivity {
      */
     private float InhaleYPosition;
     private float YOffset;
+    /**
+     * Status from the phone activity button
+     */
+    AudioManager audioManager;
 
 
 
@@ -93,7 +99,7 @@ public class TabletActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_tablet);
+        setContentView(R.layout.activity_tablet2);
 
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -101,6 +107,27 @@ public class TabletActivity extends AppCompatActivity {
             Toast.makeText(getApplicationContext(), "Bluetooth not available on your device", Toast.LENGTH_SHORT).show();
             finish();
         }
+
+        audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        int MaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        int CurrrentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        SeekBar VolumenBar = (SeekBar)findViewById(R.id.VolumeBar);
+        VolumenBar.setMax(MaxVolume);
+        VolumenBar.setProgress(CurrrentVolume);
+        VolumenBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onStopTrackingTouch(SeekBar arg0) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar arg0) {
+            }
+
+            @Override
+            public void onProgressChanged(SeekBar arg0, int arg1, boolean arg2) {
+                audioManager.setStreamVolume(AudioManager.STREAM_MUSIC, arg1, 0);
+            }
+        });
     }
 
     @Override
@@ -287,24 +314,28 @@ public class TabletActivity extends AppCompatActivity {
     private void setupChat() {
         Log.d(TAG, "setupChat()");
 
+        // Initialize the BluetoothChatService to perform bluetooth connections
+        mChatService = new BluetoothChatService(this, mHandler);
+
         // Initialize the notes buttons
         final Button Inhale_button = (Button) findViewById(R.id.inhale_button);
 
         if (Inhale_button != null) {
+            Log.d(TAG, "DEFINIENDO");
             Inhale_button.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
 
                     if(event.getAction()==MotionEvent.ACTION_UP){
 
+                        Log.d(TAG, "NADA");
                         InhaleRunnable.Stop();
                         InhaleYPosition = 0;
-                        Log.d(TAG, "NADA");
 
                     }else if(event.getAction()==MotionEvent.ACTION_DOWN){
 
-                        InhaleYPosition = event.getY();
                         Log.d(TAG, "SONANDO");
+                        InhaleYPosition = event.getY();
                         InhaleRunnable = new MusicTask(true);
                         Thread InhaleThread = new Thread(InhaleRunnable);
                         InhaleThread.start();
@@ -319,8 +350,7 @@ public class TabletActivity extends AppCompatActivity {
                 }
             });
 
-            // Initialize the BluetoothChatService to perform bluetooth connections
-            mChatService = new BluetoothChatService(this, mHandler);
+
         }
 
         final Button Exhale_button = (Button) findViewById(R.id.exhale_button);
@@ -473,16 +503,16 @@ public class TabletActivity extends AppCompatActivity {
             int Amplitud = 10000;
             double twopi = 8.*Math.atan(1.);
 
-            double Frequency_button1;
-            double Frequency_button2;
-            double Frequency_button3;
-            double Frequency_button4;
-            double Frequency_button5;
-            double Frequency_button6;
-            double Frequency_button7;
-            double Frequency_button8;
-            double Frequency_button9;
-            double Frequency_button10;
+            double Frequency_button1 = InhaleOrExhale? Notes.D1*Math.pow(2,2):Notes.C1*Math.pow(2,2);
+            double Frequency_button2 = InhaleOrExhale? Notes.G1*Math.pow(2,2):Notes.E1*Math.pow(2,2);
+            double Frequency_button3 = InhaleOrExhale? Notes.B1*Math.pow(2,2):Notes.G1*Math.pow(2,2);
+            double Frequency_button4 = InhaleOrExhale? Notes.D1*Math.pow(2,3):Notes.C1*Math.pow(2,3);
+            double Frequency_button5 = InhaleOrExhale? Notes.F1*Math.pow(2,3):Notes.E1*Math.pow(2,3);
+            double Frequency_button6 = InhaleOrExhale? Notes.A1*Math.pow(2,3):Notes.G1*Math.pow(2,3);
+            double Frequency_button7 = InhaleOrExhale? Notes.B1*Math.pow(2,4):Notes.C1*Math.pow(2,4);
+            double Frequency_button8 = InhaleOrExhale? Notes.D1*Math.pow(2,4):Notes.E1*Math.pow(2,4);
+            double Frequency_button9 = InhaleOrExhale? Notes.F1*Math.pow(2,4):Notes.G1*Math.pow(2,4);
+            double Frequency_button10 = InhaleOrExhale? Notes.A1*Math.pow(2,5):Notes.C1*Math.pow(2,5);
 
             double phase_button1 = 0.0;
             double phase_button2 = 0.0;
@@ -505,7 +535,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ FIRST BUTTON SOUNDS *********************************
                     if(mPhoneButtonStatus[0]=='1'){
-                        Frequency_button1 = InhaleOrExhale? Notes.D1*Math.pow(2,3):Notes.C1*Math.pow(2,3);
+
                         if(SquareEffect) {
                             samples_button1[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button1)));
 
@@ -522,7 +552,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ SECOND BUTTON SOUNDS ********************************
                     if(mPhoneButtonStatus[1]=='1'){
-                        Frequency_button2 = InhaleOrExhale? Notes.G1*Math.pow(2,3):Notes.E1*Math.pow(2,3);
+
                         if(SquareEffect) {
                             samples_button2[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button2)));
 
@@ -539,7 +569,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ THIRD BUTTON SOUNDS *********************************
                     if(mPhoneButtonStatus[2]=='1'){
-                        Frequency_button3 = InhaleOrExhale? Notes.B1*Math.pow(2,3):Notes.G1*Math.pow(2,3);
+
 
                         if(SquareEffect) {
                             samples_button3[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button3)));
@@ -557,7 +587,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ FOURTH BUTTON SOUNDS ********************************
                     if(mPhoneButtonStatus[3]=='1'){
-                        Frequency_button4 = InhaleOrExhale? Notes.D1*Math.pow(2,4):Notes.C1*Math.pow(2,4);
+
                         if(SquareEffect) {
                             samples_button4[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button4)));
 
@@ -575,7 +605,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ FIFTH BUTTON SOUNDS *********************************
                     if(mPhoneButtonStatus[4]=='1'){
-                        Frequency_button5 = InhaleOrExhale? Notes.F1*Math.pow(2,4):Notes.E1*Math.pow(2,4);
+
                         if(SquareEffect) {
                             samples_button5[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button5)));
 
@@ -593,7 +623,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ SIXTH BUTTON SOUNDS *********************************
                     if(mPhoneButtonStatus[5]=='1'){
-                        Frequency_button6 = InhaleOrExhale? Notes.A1*Math.pow(2,4):Notes.F1*Math.pow(2,4);
+
                         if(SquareEffect) {
                             samples_button6[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button6)));
 
@@ -611,7 +641,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ SEVENTH BUTTON SOUNDS *******************************
                     if(mPhoneButtonStatus[6]=='1'){
-                        Frequency_button7 = InhaleOrExhale? Notes.B1*Math.pow(2,5):Notes.C1*Math.pow(2,5);
+
                         if(SquareEffect) {
                             samples_button7[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button7)));
 
@@ -628,7 +658,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ EIGHTH BUTTON SOUNDS ********************************
                     if(mPhoneButtonStatus[7]=='1'){
-                        Frequency_button8 = InhaleOrExhale? Notes.D1*Math.pow(2,5):Notes.E1*Math.pow(2,5);
+
                         if(SquareEffect) {
                             samples_button8[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button8)));
 
@@ -645,10 +675,9 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ NINETH BUTTON SOUNDS ********************************
                     if(mPhoneButtonStatus[8]=='1'){
-                        Frequency_button9 = InhaleOrExhale? Notes.F1*Math.pow(2,5):Notes.G1*Math.pow(2,5);
-                        if(SquareEffect) {
-                            samples_button1[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button1)));
 
+                        if(SquareEffect) {
+                            samples_button9[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button9)));
                         }else if(SawtoothEffect){
                             samples_button9[i] = (short) (-4*Amplitud/twopi * Math.atan(1/(Math.tan(phase_button9/2))));
                         }else if(TriangleEffect){
@@ -662,7 +691,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     //************************ TENTH BUTTON SOUNDS *********************************
                     if(mPhoneButtonStatus[9]=='1'){
-                        Frequency_button10 = InhaleOrExhale? Notes.A1*Math.pow(2,6):Notes.C1*Math.pow(2,6);
+
                         if(SquareEffect) {
                             samples_button10[i] = (short) (Amplitud * Math.signum(Math.sin(phase_button10)));
 

@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_centerHorizontal="true"
+    android:layout_alignParentTop="true"
+    tools:context="com.example.felipe.harmony3.TabletActivity"
+    android:background="@drawable/metal">
+
+    <Button
+        android:layout_width="420dp"
+        android:layout_height="match_parent"
+        android:text="@string/Exhale"
+        android:id="@+id/exhale_button"
+        android:layout_gravity="right|center_vertical"
+        android:background="@android:color/holo_orange_light"
+        android:textColor="@android:color/background_light"
+        android:textSize="@dimen/abc_action_button_min_width_material" />
+
+    <FrameLayout
+        android:layout_width="430dp"
+        android:layout_height="match_parent"
+        android:layout_gravity="left|center_vertical"
+        android:contextClickable="true"
+        android:touchscreenBlocksFocus="false">
+
+        <ToggleButton
+            android:layout_width="194dp"
+            android:layout_height="185dp"
+            android:id="@+id/SawtoothButton"
+            android:layout_gravity="left|top"
+            android:checked="false"
+            android:textColor="@android:color/background_light"
+            android:textSize="@dimen/abc_action_bar_content_inset_material"
+            android:textOff="Sawtooth Effect Off"
+            android:textOn="Sawtooth Effect On"
+            style="@android:style/Widget.Button.Toggle" />
+
+        <ToggleButton
+            android:layout_width="194dp"
+            android:layout_height="185dp"
+            android:id="@+id/TriangleButton"
+            android:layout_gravity="right|top"
+            android:checked="false"
+            android:textColor="@android:color/background_light"
+            android:textSize="@dimen/abc_action_bar_content_inset_material"
+            android:textOff="Triangle Effect Off"
+            android:textOn="Triangle Effect On"
+            style="@android:style/Widget.Button.Toggle" />
+
+        <ToggleButton
+            android:layout_width="194dp"
+            android:layout_height="185dp"
+            android:id="@+id/SquareButton"
+            android:layout_gravity="left|bottom"
+            android:checked="false"
+            android:textColor="@android:color/background_light"
+            android:textSize="@dimen/abc_action_bar_content_inset_material"
+            android:textOff="Square Effect Off"
+            android:textOn="Square Effect On"
+            style="@android:style/Widget.Button.Toggle" />
+
+        <ToggleButton
+            android:layout_width="194dp"
+            android:layout_height="185dp"
+            android:id="@+id/FilterButton"
+            android:layout_gravity="right|bottom"
+            android:background="#236b8e"
+            android:checked="false"
+            android:textColor="@android:color/background_light"
+            android:textSize="@dimen/abc_action_bar_content_inset_material"
+            android:textOff="Filter Off"
+            android:textOn="Filter On" />
+
+        <SeekBar
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/VolumeBar"
+            android:layout_gravity="center" />
+
+    </FrameLayout>
+
+    <Button
+        android:layout_width="400dp"
+        android:layout_height="match_parent"
+        android:text="@string/Inhale"
+        android:id="@+id/inhale_button"
+        android:layout_gravity="center"
+        android:textColor="@android:color/background_light"
+        android:textSize="@dimen/abc_action_button_min_height_material"
+        android:background="@android:color/holo_blue_dark" />
+
+</FrameLayout>
+
