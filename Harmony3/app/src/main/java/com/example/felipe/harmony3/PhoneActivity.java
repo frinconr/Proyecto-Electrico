@@ -63,6 +63,8 @@ public class PhoneActivity extends AppCompatActivity{
     /**
      * Notes buttons
      */
+
+    /*
     private Button first_button;
     private Button second_button;
     private Button third_button;
@@ -73,7 +75,7 @@ public class PhoneActivity extends AppCompatActivity{
     private Button eighth_button;
     private Button nineth_button;
     private Button tenth_button;
-
+*/
 
     RelativeLayout mRelativeLayout;
     LinearLayout mLinearLayout;
@@ -93,6 +95,8 @@ public class PhoneActivity extends AppCompatActivity{
         mLinearLayout =  (LinearLayout) findViewById(R.id.PhoneLinearLayout);
 
 
+
+/*
         // Initialize the notes buttons
         first_button    = (Button) findViewById(R.id.first_button);
         second_button   = (Button) findViewById(R.id.second_button);
@@ -104,7 +108,7 @@ public class PhoneActivity extends AppCompatActivity{
         eighth_button   = (Button) findViewById(R.id.eighth_button);
         nineth_button   = (Button) findViewById(R.id.nineth_button);
         tenth_button    = (Button) findViewById(R.id.tenth_button);
-
+*/
     }
 
 
@@ -287,6 +291,8 @@ public class PhoneActivity extends AppCompatActivity{
      */
     private void setupChat() {
         Log.d(TAG, "setupChat()");
+
+
 /*
     //************************************ FIRST BUTTON ********************************************
 
@@ -572,9 +578,8 @@ public class PhoneActivity extends AppCompatActivity{
     }
 
 
-
     @Override
-    public boolean dispatchTouchEvent(MotionEvent event){
+    public boolean onTouchEvent(MotionEvent event){
         int action = event.getActionMasked();
         int pointerIndex = MotionEventCompat.getActionIndex(event);
         int pointerId = event.getPointerId(pointerIndex);
@@ -592,6 +597,8 @@ public class PhoneActivity extends AppCompatActivity{
                 if(ButtonIndex!=-1) {
                     mButtonsState[ButtonIndex]='1';
                     sendUpdatedState();
+                }else{
+                    return false;
                 }
                 //Log.d("DACTION:", "Button" + String.valueOf(ButtonIndex) +"Pressed by:"+String.valueOf(pointerIndex)+","+String.valueOf(pointerId));
                 break;
@@ -655,8 +662,10 @@ public class PhoneActivity extends AppCompatActivity{
 
         }
 
-        return true;
+        return super.onTouchEvent(event);
     }
+
+
 
 
     private int FindButtonPressed(int XCoor, int YCoord){

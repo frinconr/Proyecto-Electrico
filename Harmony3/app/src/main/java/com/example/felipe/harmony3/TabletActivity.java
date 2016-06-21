@@ -87,7 +87,17 @@ public class TabletActivity extends AppCompatActivity {
      * Status from the phone activity button
      */
     private float InhaleYPosition;
-    private float YOffset;
+    private float InhaleYOffset;
+    private float InhaleXPosition;
+    private float InhaleXOffset;
+
+    /**
+     * Status from the phone activity button
+     */
+    private float ExhaleYPosition;
+    private float ExhaleYOffset;
+    private float ExhaleXPosition;
+    private float ExhaleXOffset;
     /**
      * Status from the phone activity button
      */
@@ -321,29 +331,52 @@ public class TabletActivity extends AppCompatActivity {
         final Button Inhale_button = (Button) findViewById(R.id.inhale_button);
 
         if (Inhale_button != null) {
-            Log.d(TAG, "DEFINIENDO");
             Inhale_button.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
 
                     if(event.getAction()==MotionEvent.ACTION_UP){
 
-                        Log.d(TAG, "NADA");
+                        //Log.d(TAG, "NADA");
                         InhaleRunnable.Stop();
                         InhaleYPosition = 0;
-
+                        InhaleXPosition = 0;
+                        InhaleYOffset = 0;
+                        InhaleXOffset = 0;
                     }else if(event.getAction()==MotionEvent.ACTION_DOWN){
 
-                        Log.d(TAG, "SONANDO");
+                        //Log.d(TAG, "SONANDO");
                         InhaleYPosition = event.getY();
+                        InhaleXPosition = event.getRawX();
+                        InhaleYOffset = 0;
+                        InhaleXOffset = 0;
+
                         InhaleRunnable = new MusicTask(true);
                         Thread InhaleThread = new Thread(InhaleRunnable);
                         InhaleThread.start();
 
                     }else if(event.getAction()==MotionEvent.ACTION_MOVE){
 
-                        YOffset = (InhaleYPosition-event.getY())/(Inhale_button.getBottom()-Inhale_button.getTop()/InhaleYPosition);
-                        Log.d(TAG, String.valueOf(YOffset));
+                        InhaleYOffset = InhaleYPosition-event.getY();
+                        // Se esta moviendo hacia arriba.
+                        if(InhaleYOffset>0){
+                            InhaleYOffset = InhaleYOffset/(InhaleYPosition-Inhale_button.getTop());
+                        }
+                        if(InhaleYOffset<0){
+                            InhaleYOffset = InhaleYOffset/(Inhale_button.getBottom()-InhaleYPosition);
+
+                        }
+
+                        InhaleXOffset = event.getRawX()-InhaleXPosition;
+                        // Se esta moviendo hacia la derecha
+                        if(InhaleXOffset>0){
+                            InhaleXOffset = InhaleXOffset/(Inhale_button.getRight()-InhaleXPosition);
+                        }
+                        if(InhaleXOffset<0) {
+                            InhaleXOffset = InhaleXOffset / (InhaleXPosition - Inhale_button.getLeft());
+                        }
+
+
                     }
 
                     return false;
@@ -364,9 +397,18 @@ public class TabletActivity extends AppCompatActivity {
 
                         Log.d(TAG, "NADA");
                         ExhaleRunnable.Stop();
+                        ExhaleYPosition = 0;
+                        ExhaleXPosition = 0;
+                        ExhaleYOffset = 0;
+                        ExhaleXOffset = 0;
 
                     }
                     if(event.getAction()==MotionEvent.ACTION_DOWN){
+
+                        ExhaleYPosition = event.getY();
+                        ExhaleXPosition = event.getRawX();
+                        ExhaleYOffset = 0;
+                        ExhaleXOffset = 0;
 
                         ExhaleRunnable = new MusicTask(false);
                         Thread ExhaleThread = new Thread(ExhaleRunnable);
@@ -376,10 +418,24 @@ public class TabletActivity extends AppCompatActivity {
                     }
 
                     if(event.getAction()==MotionEvent.ACTION_MOVE){
-                        //Exhale_button.getDrawingRect(new Rect());
-                        //int y = Math.round(event.getY());
-                        //Log.d(TAG,String.valueOf(y));
-                        //Toast.makeText(getApplicationContext(), "Moving", Toast.LENGTH_SHORT).show();
+                        ExhaleYOffset = ExhaleYPosition-event.getY();
+                        // Se esta moviendo hacia arriba.
+                        if(ExhaleYOffset>0){
+                            ExhaleYOffset = ExhaleYOffset/(ExhaleYPosition-Exhale_button.getTop());
+                        }
+                        if(ExhaleYOffset<0){
+                            ExhaleYOffset = ExhaleYOffset/(Exhale_button.getBottom()-ExhaleYPosition);
+
+                        }
+
+                        ExhaleXOffset = event.getRawX()-ExhaleXPosition;
+                        // Se esta moviendo hacia la derecha
+                        if(ExhaleXOffset>0){
+                            ExhaleXOffset = ExhaleXOffset/(Exhale_button.getRight()-ExhaleXPosition);
+                        }
+                        if(ExhaleXOffset<0) {
+                            ExhaleXOffset = ExhaleXOffset / (ExhaleXPosition - Exhale_button.getLeft());
+                        };
 
                     }
                     return false;
@@ -486,6 +542,7 @@ public class TabletActivity extends AppCompatActivity {
     @Override
         public void run(){
             int SamplingRate = 44100;
+            //int SamplingRate = 22050;
             int buffer_size = AudioTrack.getMinBufferSize(SamplingRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
             AudioTrack mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SamplingRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, buffer_size, AudioTrack.MODE_STREAM);
             short samples_button1[] = new short[buffer_size];
@@ -503,16 +560,28 @@ public class TabletActivity extends AppCompatActivity {
             int Amplitud = 10000;
             double twopi = 8.*Math.atan(1.);
 
-            double Frequency_button1 = InhaleOrExhale? Notes.D1*Math.pow(2,2):Notes.C1*Math.pow(2,2);
-            double Frequency_button2 = InhaleOrExhale? Notes.G1*Math.pow(2,2):Notes.E1*Math.pow(2,2);
-            double Frequency_button3 = InhaleOrExhale? Notes.B1*Math.pow(2,2):Notes.G1*Math.pow(2,2);
-            double Frequency_button4 = InhaleOrExhale? Notes.D1*Math.pow(2,3):Notes.C1*Math.pow(2,3);
-            double Frequency_button5 = InhaleOrExhale? Notes.F1*Math.pow(2,3):Notes.E1*Math.pow(2,3);
-            double Frequency_button6 = InhaleOrExhale? Notes.A1*Math.pow(2,3):Notes.G1*Math.pow(2,3);
-            double Frequency_button7 = InhaleOrExhale? Notes.B1*Math.pow(2,4):Notes.C1*Math.pow(2,4);
-            double Frequency_button8 = InhaleOrExhale? Notes.D1*Math.pow(2,4):Notes.E1*Math.pow(2,4);
-            double Frequency_button9 = InhaleOrExhale? Notes.F1*Math.pow(2,4):Notes.G1*Math.pow(2,4);
-            double Frequency_button10 = InhaleOrExhale? Notes.A1*Math.pow(2,5):Notes.C1*Math.pow(2,5);
+            double Frequency_button1 = InhaleOrExhale? Notes.D1*Math.pow(2,3):Notes.C1*Math.pow(2,3);
+            double Frequency_button2 = InhaleOrExhale? Notes.G1*Math.pow(2,3):Notes.E1*Math.pow(2,3);
+            double Frequency_button3 = InhaleOrExhale? Notes.B1*Math.pow(2,3):Notes.G1*Math.pow(2,3);
+            double Frequency_button4 = InhaleOrExhale? Notes.D1*Math.pow(2,4):Notes.C1*Math.pow(2,4);
+            double Frequency_button5 = InhaleOrExhale? Notes.F1*Math.pow(2,4):Notes.E1*Math.pow(2,4);
+            double Frequency_button6 = InhaleOrExhale? Notes.A1*Math.pow(2,4):Notes.G1*Math.pow(2,4);
+            double Frequency_button7 = InhaleOrExhale? Notes.B1*Math.pow(2,5):Notes.C1*Math.pow(2,5);
+            double Frequency_button8 = InhaleOrExhale? Notes.D1*Math.pow(2,5):Notes.E1*Math.pow(2,5);
+            double Frequency_button9 = InhaleOrExhale? Notes.F1*Math.pow(2,5):Notes.G1*Math.pow(2,5);
+            double Frequency_button10 = InhaleOrExhale? Notes.A1*Math.pow(2,6):Notes.C1*Math.pow(2,6);
+
+            float AutoVibFreq = 10;
+            float AutoPhase_b1 = 0;
+            float AutoPhase_b2 = 0;
+            float AutoPhase_b3 = 0;
+            float AutoPhase_b4 = 0;
+            float AutoPhase_b5 = 0;
+            float AutoPhase_b6 = 0;
+            float AutoPhase_b7 = 0;
+            float AutoPhase_b8 = 0;
+            float AutoPhase_b9 = 0;
+            float AutoPhase_b10 = 0;
 
             double phase_button1 = 0.0;
             double phase_button2 = 0.0;
@@ -525,13 +594,23 @@ public class TabletActivity extends AppCompatActivity {
             double phase_button9 = 0.0;
             double phase_button10 = 0.0;
 
+
+            double alpha = 0.0;
+            double beta = 0.0;
+
+
             // start audio
             mAudioTrack.play();
 
             // synthesis loop
             while(!Stop){
 
+                alpha    = InhaleOrExhale? InhaleYOffset:ExhaleYOffset;
+                beta     = InhaleOrExhale? InhaleXOffset:ExhaleXOffset;
+
                 for(int i=0; i < buffer_size; i++){
+
+
 
                     //************************ FIRST BUTTON SOUNDS *********************************
                     if(mPhoneButtonStatus[0]=='1'){
@@ -547,7 +626,14 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button1[i] = (short) (Amplitud * Math.sin(phase_button1));
                         }
-                        phase_button1 += twopi*(Frequency_button1+YOffset*12)/SamplingRate;
+
+
+                        phase_button1 += (float) twopi*(Frequency_button1+(alpha*Frequency_button1*Math.cos(AutoPhase_b1)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b1 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b1 = 0;
+                        }
                     }else{samples_button1[i] = 0;}
 
                     //************************ SECOND BUTTON SOUNDS ********************************
@@ -564,7 +650,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button2[i] = (short) (Amplitud * Math.sin(phase_button2));
                         }
-                        phase_button2 += twopi*(Frequency_button2)/SamplingRate;
+                        phase_button2 += (float) twopi*(Frequency_button2+(alpha*Frequency_button2*Math.cos(AutoPhase_b2)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b2 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b2 = 0;
+                        }
                     }else{samples_button2[i] = 0;}
 
                     //************************ THIRD BUTTON SOUNDS *********************************
@@ -582,7 +673,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button3[i] = (short) (Amplitud * Math.sin(phase_button3));
                         }
-                        phase_button3 += twopi*(Frequency_button3)/SamplingRate;
+                        phase_button3 += (float) twopi*(Frequency_button3+(alpha*Frequency_button3*Math.cos(AutoPhase_b3)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b3 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b3 = 0;
+                        }
                     }else{samples_button3[i] = 0;}
 
                     //************************ FOURTH BUTTON SOUNDS ********************************
@@ -599,7 +695,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button4[i] = (short) (Amplitud * Math.sin(phase_button4));
                         }
-                        phase_button4 += twopi*(Frequency_button4)/SamplingRate;
+                        phase_button4 += (float) twopi*(Frequency_button4+(alpha*Frequency_button4*Math.cos(AutoPhase_b4)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b4 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b4 = 0;
+                        }
                     }else{samples_button4[i] = 0;}
 
 
@@ -617,7 +718,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button5[i] = (short) (Amplitud * Math.sin(phase_button5));
                         }
-                        phase_button5 += twopi*(Frequency_button5)/SamplingRate;
+                        phase_button5 += (float) twopi*(Frequency_button5+(alpha*Frequency_button5*Math.cos(AutoPhase_b5)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b5 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b5 = 0;
+                        }
                     }else{samples_button5[i] = 0;}
 
 
@@ -635,7 +741,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button6[i] = (short) (Amplitud * Math.sin(phase_button6));
                         }
-                        phase_button6 += twopi*(Frequency_button6)/SamplingRate;
+                        phase_button6 += (float) twopi*(Frequency_button6+(alpha*Frequency_button6*Math.cos(AutoPhase_b6)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b6 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b6 = 0;
+                        }
                     }else{samples_button6[i] = 0;}
 
 
@@ -653,7 +764,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button7[i] = (short) (Amplitud * Math.sin(phase_button7));
                         }
-                        phase_button7 += twopi*(Frequency_button7)/SamplingRate;
+                        phase_button7 += (float) twopi*(Frequency_button7+(alpha*Frequency_button7*Math.cos(AutoPhase_b7)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b7 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b7 = 0;
+                        }
                     }else{samples_button7[i] = 0;}
 
                     //************************ EIGHTH BUTTON SOUNDS ********************************
@@ -670,7 +786,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button8[i] = (short) (Amplitud * Math.sin(phase_button8));
                         }
-                        phase_button8 += twopi*(Frequency_button8)/SamplingRate;
+                        phase_button8 += (float) twopi*(Frequency_button8+(alpha*Frequency_button8*Math.cos(AutoPhase_b8)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b8 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b8 = 0;
+                        }
                     }else{samples_button8[i] = 0;}
 
                     //************************ NINETH BUTTON SOUNDS ********************************
@@ -686,7 +807,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button9[i] = (short) (Amplitud * Math.sin(phase_button9));
                         }
-                        phase_button9 += twopi*(Frequency_button9)/SamplingRate;
+                        phase_button9 += (float) twopi*(Frequency_button9+(alpha*Frequency_button9*Math.cos(AutoPhase_b9)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b9 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b9 = 0;
+                        }
                     }else{samples_button9[i] = 0;}
 
                     //************************ TENTH BUTTON SOUNDS *********************************
@@ -703,7 +829,12 @@ public class TabletActivity extends AppCompatActivity {
                         else{
                             samples_button10[i] = (short) (Amplitud * Math.sin(phase_button10));
                         }
-                        phase_button10 += twopi*(Frequency_button10)/SamplingRate;
+                        phase_button10 += (float) twopi*(Frequency_button10+(alpha*Frequency_button10*Math.cos(AutoPhase_b10)/12))/SamplingRate;
+                        if(Math.abs(beta)>0.25) {
+                            AutoPhase_b10 += twopi * beta * AutoVibFreq / SamplingRate;
+                        }else{
+                            AutoPhase_b10 = 0;
+                        }
                     }else{samples_button10[i] = 0;}
 
                     ResultWave[i] = (short) ((samples_button1[i]
@@ -719,6 +850,7 @@ public class TabletActivity extends AppCompatActivity {
                 }
                 mAudioTrack.write(ResultWave, 0, buffer_size);
             }
+
             mAudioTrack.stop();
             mAudioTrack.release();
 
