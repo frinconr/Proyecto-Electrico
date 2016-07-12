@@ -25,10 +25,6 @@
             android:configChanges="orientation|keyboardHidden"
             android:label="@string/select_device"
             android:theme="@android:style/Theme.Holo.Dialog" />
-        <activity
-            android:name=".MainActivityTabbed"
-            android:label="@string/title_activity_main_activity_tabbed"
-            android:theme="@style/AppTheme.NoActionBar"></activity>
     </application>
 
 </manifest>

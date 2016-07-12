@@ -1,13 +1,9 @@
 package com.example.felipe.harmony3;
 
-import android.annotation.SuppressLint;
 import android.content.Context;
-import android.graphics.Matrix;
-import android.graphics.Rect;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioTrack;
-import android.provider.ContactsContract;
 import android.support.v7.app.ActionBar;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -28,11 +24,13 @@ import android.widget.SeekBar;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-@SuppressLint("HandlerLeak")
+
 public class TabletActivity extends AppCompatActivity {
 
+    /**
+     * Tag for Log
+     */
     private static final String TAG = "TabletActivity";
-
 
 
     // Intent request codes
@@ -61,69 +59,111 @@ public class TabletActivity extends AppCompatActivity {
     private char[] mPhoneButtonStatus= {'0','0','0','0','0','0','0','0','0','0'};
 
     /**
-     * Status from the phone activity button
+     * Inhale thread's runnable for audio synthesis
      */
-
     private MusicTask InhaleRunnable;
+
+    /**
+     * Exhale thread's runnable for audio synthesis
+     */
     private MusicTask ExhaleRunnable;
 
 
     /**
-     * Status from the phone activity button
+     * Boolean to activate square wave synthesis
      */
     private boolean SquareEffect = false;
 
     /**
-     * Status from the phone activity button
+     * Boolean to activate sawtooth wave synthesis
      */
     private boolean SawtoothEffect = false;
 
     /**
-     * Status from the phone activity button
+     * Boolean to activate triangle wave synthesis
      */
     private boolean TriangleEffect = false;
 
     /**
-     * Status from the phone activity button
+     * Finger Y coordinate at Inhale button
      */
     private float InhaleYPosition;
+
+    /**
+     * Normalized from 0-1 finger Y coordinate at inhale button
+     */
     private float InhaleYOffset;
+
+    /**
+     * Finger X coordinate at Inhale button
+     */
     private float InhaleXPosition;
+
+    /**
+     * Normalized from 0-1 finger X coordinate at inhale button
+     */
     private float InhaleXOffset;
 
     /**
-     * Status from the phone activity button
+     * Finger Y coordinate at Exhale button
      */
     private float ExhaleYPosition;
-    private float ExhaleYOffset;
-    private float ExhaleXPosition;
-    private float ExhaleXOffset;
     /**
-     * Status from the phone activity button
+     * Normalized from 0-1 finger Y coordinate at exhale button
+     */
+    private float ExhaleYOffset;
+
+    /**
+     * Finger X coordinate at Exhale button
+     */
+    private float ExhaleXPosition;
+
+    /**
+     * Normalized from 0-1 finger X coordinate at exhale button
+     */
+    private float ExhaleXOffset;
+
+    /**
+     * AudioManager object to control volume
      */
     AudioManager audioManager;
 
 
+    /**
+     * Called when the activity is starting. Initialize the BluetoothAdapter and set AudioManager
+     * configuration to control de volume
+     * @param savedInstanceState If the activity is being re-initialized after previously being shut down
+     *                           then this Bundle contains the data it most recently supplied in onSaveInstanceState(Bundle).
+     *                           Note: Otherwise it is null.
+     */
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_tablet2);
-
+        //Obtain BluetoothAdapter for managing all Bluetooth actions
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        // Check if devices has Bluetooth available
         if (mBluetoothAdapter == null) {
             Toast.makeText(getApplicationContext(), "Bluetooth not available on your device", Toast.LENGTH_SHORT).show();
             finish();
         }
-
+        //Initialize AudioManager object
         audioManager = (AudioManager)getSystemService(Context.AUDIO_SERVICE);
+        // Get the maximum volume of the device
         int MaxVolume = audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC);
+        // Get current volume of the device
         int CurrrentVolume = audioManager.getStreamVolume(AudioManager.STREAM_MUSIC);
+        // Initialize Seekbar to control volume in the application
         SeekBar VolumenBar = (SeekBar)findViewById(R.id.VolumeBar);
+        //Set maximum volume as the maximum value of the seekbar
         VolumenBar.setMax(MaxVolume);
+        //Initialize seekbar at device current volume
         VolumenBar.setProgress(CurrrentVolume);
+
+        // Change the streaming volume as the volume seekbar is modified by the user.
         VolumenBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onStopTrackingTouch(SeekBar arg0) {
@@ -140,11 +180,13 @@ public class TabletActivity extends AppCompatActivity {
         });
     }
 
+    /**
+     * If BT is not on, request that it be enabled.
+     * setupChat() will then be called during onActivityResult.
+     */
     @Override
     public void onStart() {
         super.onStart();
-        // If BT is not on, request that it be enabled.
-        // setupChat() will then be called during onActivityResult
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
@@ -153,6 +195,9 @@ public class TabletActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Release resources from BluetoothChatService
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -161,16 +206,16 @@ public class TabletActivity extends AppCompatActivity {
         }
     }
 
-
+    /**
+     * Covers the case in which BT was not enabled during onStart(), so we were paused to enable it.
+     * onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
+     */
     @Override
     public void onResume() {
         super.onResume();
 
-        // Performing this check in onResume() covers the case in which BT was
-        // not enabled during onStart(), so we were paused to enable it...
-        // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
         if (mChatService != null) {
-            // Only if the state is STATE_NONE, do we know that we haven't started already
+            // STATE_NONE indicates that BluetoothChatService hasn't been started
             if (mChatService.getState() == BluetoothChatService.STATE_NONE) {
                 // Start the Bluetooth chat services
                 mChatService.start();
@@ -178,8 +223,11 @@ public class TabletActivity extends AppCompatActivity {
         }
     }
 
-
-
+    /**
+     * Initialize the contents of the Activity's standard options menu
+     * @param menu The options menu
+     * @return Returns true for the menu to be displayed
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
@@ -188,6 +236,11 @@ public class TabletActivity extends AppCompatActivity {
         return true;
     }
 
+    /**
+     * This method is called whenever an item in the options menu is selected
+     * @param item Menu item id defined on xml description
+     * @return Returns true if action was processed or false in case not
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
@@ -207,6 +260,16 @@ public class TabletActivity extends AppCompatActivity {
         return false;
     }
 
+    /**
+     *Called when the users responds to the Bluetooth enabled request or when a device id selected
+     *on DeviceListActivity.
+     *@param requestCode
+     *          Code with which the activity was started
+     *@param resultCode
+     *          Resulted code returned form activity
+     *@param data
+     *          Any additional data from it
+     */
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
 
@@ -243,9 +306,9 @@ public class TabletActivity extends AppCompatActivity {
             switch (msg.what) {
                 case Constants.MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
+                        // Bluetooth connection has change state. Change header subtitle for notify user.
                         case BluetoothChatService.STATE_CONNECTED:
                             setStatus(getString(R.string.title_connected_to)+ " " + mConnectedDeviceName);
-                            //mConversationArrayAdapter.clear();
                             break;
                         case BluetoothChatService.STATE_CONNECTING:
                             setStatus(R.string.title_connecting);
@@ -260,15 +323,13 @@ public class TabletActivity extends AppCompatActivity {
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    //mConversationArrayAdapter.add("Me:  " + writeMessage);
                     break;
                 case Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
                     // construct a string from the valid bytes in the buffer
                     String readMessage = new String(readBuf, 0, msg.arg1);
+                    //Transform string to char array
                     UpdatePhoneStatus(readMessage);
-                    //Toast.makeText(getApplicationContext(), readMessage, Toast.LENGTH_SHORT).show();
-                   // mConversationArrayAdapter.add(mConnectedDeviceName + ":  " + readMessage);
                     break;
                 case Constants.MESSAGE_DEVICE_NAME:
                     // save the connected device's name
@@ -319,7 +380,8 @@ public class TabletActivity extends AppCompatActivity {
     }
 
     /**
-     * Set up the UI and background operations for chat.
+     * Set up the UI and background operations for chat. Also define the functions of inhale and
+     * exhale buttons and all the effects toggle buttons.
      */
     private void setupChat() {
         Log.d(TAG, "setupChat()");
@@ -327,7 +389,7 @@ public class TabletActivity extends AppCompatActivity {
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new BluetoothChatService(this, mHandler);
 
-        // Initialize the notes buttons
+        // Initialize the inhale button
         final Button Inhale_button = (Button) findViewById(R.id.inhale_button);
 
         if (Inhale_button != null) {
@@ -336,29 +398,29 @@ public class TabletActivity extends AppCompatActivity {
                 public boolean onTouch(View v, MotionEvent event) {
 
                     if(event.getAction()==MotionEvent.ACTION_UP){
-
-                        //Log.d(TAG, "NADA");
+                        // Stops audio streaming and resets all variables related to finger position
                         InhaleRunnable.Stop();
                         InhaleYPosition = 0;
                         InhaleXPosition = 0;
                         InhaleYOffset = 0;
                         InhaleXOffset = 0;
                     }else if(event.getAction()==MotionEvent.ACTION_DOWN){
-
-                        //Log.d(TAG, "SONANDO");
+                        // Save the pointer coordinates at first touch and reset the offsets
                         InhaleYPosition = event.getY();
                         InhaleXPosition = event.getRawX();
                         InhaleYOffset = 0;
                         InhaleXOffset = 0;
-
+                        //for debugging the alpha and beta calculations at inhale button
+                        Log.d("Boton de Inhalar", "Alpha = " + String.valueOf(InhaleYOffset)+" Beta = " + String.valueOf(InhaleXOffset) );
+                        // Initialize synthesis task to be assigned to the inhale thread for execution
                         InhaleRunnable = new MusicTask(true);
                         Thread InhaleThread = new Thread(InhaleRunnable);
                         InhaleThread.start();
 
                     }else if(event.getAction()==MotionEvent.ACTION_MOVE){
-
+                        // Some finger is moving so calculate the Y offset from initial position
                         InhaleYOffset = InhaleYPosition-event.getY();
-                        // Se esta moviendo hacia arriba.
+                        // Is moving up if the offset is positive, else is moving down through the screen
                         if(InhaleYOffset>0){
                             InhaleYOffset = InhaleYOffset/(InhaleYPosition-Inhale_button.getTop());
                         }
@@ -366,15 +428,17 @@ public class TabletActivity extends AppCompatActivity {
                             InhaleYOffset = InhaleYOffset/(Inhale_button.getBottom()-InhaleYPosition);
 
                         }
-
+                        // Calculate the X offset from initial position
                         InhaleXOffset = event.getRawX()-InhaleXPosition;
-                        // Se esta moviendo hacia la derecha
+                        // Is moving to the right if the offset is positive, else is moving left through the screen
                         if(InhaleXOffset>0){
                             InhaleXOffset = InhaleXOffset/(Inhale_button.getRight()-InhaleXPosition);
                         }
                         if(InhaleXOffset<0) {
                             InhaleXOffset = InhaleXOffset / (InhaleXPosition - Inhale_button.getLeft());
                         }
+                        //for debugging the alpha and beta calculations at inhale button
+                        Log.d("Boton de Inhalar", "Alpha = " + String.valueOf(InhaleYOffset)+" Beta = " + String.valueOf(InhaleXOffset) );
 
 
                     }
@@ -385,7 +449,7 @@ public class TabletActivity extends AppCompatActivity {
 
 
         }
-
+        // Initialize the exhale button
         final Button Exhale_button = (Button) findViewById(R.id.exhale_button);
 
         if (Exhale_button != null) {
@@ -395,7 +459,7 @@ public class TabletActivity extends AppCompatActivity {
 
                     if(event.getAction()==MotionEvent.ACTION_UP){
 
-                        Log.d(TAG, "NADA");
+                        // Stops audio streaming and resets all variables related to finger position
                         ExhaleRunnable.Stop();
                         ExhaleYPosition = 0;
                         ExhaleXPosition = 0;
@@ -404,22 +468,24 @@ public class TabletActivity extends AppCompatActivity {
 
                     }
                     if(event.getAction()==MotionEvent.ACTION_DOWN){
-
+                        // Save the pointer coordinates at first touch and reset the offsets
                         ExhaleYPosition = event.getY();
                         ExhaleXPosition = event.getRawX();
                         ExhaleYOffset = 0;
                         ExhaleXOffset = 0;
-
+                        //for debugging the alpha and beta calculations at exhale button
+                        Log.d("Boton de Exhalar", "Alpha = " + String.valueOf(ExhaleYOffset)+" Beta = " + String.valueOf(ExhaleXOffset) );
+                        // Initialize synthesis task to be assigned to the inhale thread for execution
                         ExhaleRunnable = new MusicTask(false);
                         Thread ExhaleThread = new Thread(ExhaleRunnable);
                         ExhaleThread.start();
-                        Log.d(TAG, "SONANDO");
 
                     }
 
                     if(event.getAction()==MotionEvent.ACTION_MOVE){
+                        // Some finger is moving so calculate the Y offset from initial position
                         ExhaleYOffset = ExhaleYPosition-event.getY();
-                        // Se esta moviendo hacia arriba.
+                        // Is moving up if the offset is positive, else is moving down through the screen
                         if(ExhaleYOffset>0){
                             ExhaleYOffset = ExhaleYOffset/(ExhaleYPosition-Exhale_button.getTop());
                         }
@@ -427,15 +493,17 @@ public class TabletActivity extends AppCompatActivity {
                             ExhaleYOffset = ExhaleYOffset/(Exhale_button.getBottom()-ExhaleYPosition);
 
                         }
-
+                        // Calculate the X offset from initial position
                         ExhaleXOffset = event.getRawX()-ExhaleXPosition;
-                        // Se esta moviendo hacia la derecha
+                        // Is moving to the right if the offset is positive, else is moving left through the screen
                         if(ExhaleXOffset>0){
                             ExhaleXOffset = ExhaleXOffset/(Exhale_button.getRight()-ExhaleXPosition);
                         }
                         if(ExhaleXOffset<0) {
                             ExhaleXOffset = ExhaleXOffset / (ExhaleXPosition - Exhale_button.getLeft());
-                        };
+                        }
+                        //for debugging the alpha and beta calculations at exhale button
+                        Log.d("Boton de Exhalar", "Alpha = " + String.valueOf(ExhaleYOffset)+" Beta = " + String.valueOf(ExhaleXOffset) );
 
                     }
                     return false;
@@ -443,9 +511,13 @@ public class TabletActivity extends AppCompatActivity {
             });
         }
 
+        // Initialize all toogle buttons for sound effect selection
         final ToggleButton SquareToggleButton = (ToggleButton) findViewById(R.id.SquareButton);
         final ToggleButton SawToggleButton = (ToggleButton) findViewById(R.id.SawtoothButton);
         final ToggleButton TriangleButton = (ToggleButton) findViewById(R.id.TriangleButton);
+
+        // Each button sets to true it's corresponding boolean and sets the other ones to false
+        // so that only one can be selected at the time.
 
         if (SquareToggleButton != null) {
             SquareToggleButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
@@ -518,33 +590,70 @@ public class TabletActivity extends AppCompatActivity {
         actionBar.setSubtitle(subTitle);
     }
 
-
+    /**
+     * Converts the incoming state string into a char array and save it in the local variable
+     * @param state State String received from the phone buttons status
+     */
     private void UpdatePhoneStatus(String state){
 
         mPhoneButtonStatus = state.toCharArray();
 
     }
 
+    /**
+     * Class dedicated to the synthesis of the audio. Initializes the corresponding variables for
+     * inhale or exhale streaming. Manages all actions of AudioTrack object and generates the
+     * selected wave to create and be played.
+     */
 
     class MusicTask implements Runnable{
 
+        /**
+         * Boolean to know id define variables for inhale or exhale audio playback.
+         * True -> Inhale playback
+         * False -> Exhale playback
+         */
         private boolean InhaleOrExhale;
+
+        /**
+         * Boolean to know when to stop synthesis task. It is modified if the user stops touching
+         * the instrument buttons.
+         */
         private volatile boolean Stop = false;
 
+        /**
+         * Constructor. Prepares a new runnable task.
+         *
+         * @param mInhaleOrExhale Boolean to know if exhaling or inhaling
+         */
         public MusicTask(boolean mInhaleOrExhale){
             this.InhaleOrExhale  = mInhaleOrExhale;
         }
 
+        /**
+         * Stop function sets the Stop boolean to true when user stops selecting the inhale or exhale button
+         */
         public void Stop(){
             Stop = true;
         }
 
-    @Override
+        /**
+         * run method contains all the synthesis procedure. All variables and loops to create the
+         * desired wave.
+         */
+
+        @Override
         public void run(){
+
+            // Synthesis sampling rate. Double of audible bandwidth
             int SamplingRate = 44100;
-            //int SamplingRate = 22050;
+            // Get the minimum size of playback buffer
             int buffer_size = AudioTrack.getMinBufferSize(SamplingRate,AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT);
+            // Initialize AudioTrack object with streaming mode, sampling rate, mono format,16bit encoding and previous minimum buffer size calculated
             AudioTrack mAudioTrack = new AudioTrack(AudioManager.STREAM_MUSIC, SamplingRate, AudioFormat.CHANNEL_OUT_MONO, AudioFormat.ENCODING_PCM_16BIT, buffer_size, AudioTrack.MODE_STREAM);
+
+            // Array of shorts that will store a part of the generated wave to be played the size of the buffer.
+            // There are 10 for each possible button on smartphone
             short samples_button1[] = new short[buffer_size];
             short samples_button2[] = new short[buffer_size];
             short samples_button3[] = new short[buffer_size];
@@ -555,11 +664,17 @@ public class TabletActivity extends AppCompatActivity {
             short samples_button8[] = new short[buffer_size];
             short samples_button9[] = new short[buffer_size];
             short samples_button10[] = new short[buffer_size];
+
+            // The ResultWave is the normalized sum of each note produced. Is the one send to playback buffer.
             short ResultWave[] = new short[buffer_size];
 
+            // Amplitud of all waves generated
             int Amplitud = 10000;
+            // 2*pi constant
             double twopi = 8.*Math.atan(1.);
 
+            // Define all the possible frequencies possible for the 10 notes at the smartphone depending if
+            // exhaling or inhaling.
             double Frequency_button1 = InhaleOrExhale? Notes.D1*Math.pow(2,3):Notes.C1*Math.pow(2,3);
             double Frequency_button2 = InhaleOrExhale? Notes.G1*Math.pow(2,3):Notes.E1*Math.pow(2,3);
             double Frequency_button3 = InhaleOrExhale? Notes.B1*Math.pow(2,3):Notes.G1*Math.pow(2,3);
@@ -571,7 +686,10 @@ public class TabletActivity extends AppCompatActivity {
             double Frequency_button9 = InhaleOrExhale? Notes.F1*Math.pow(2,5):Notes.G1*Math.pow(2,5);
             double Frequency_button10 = InhaleOrExhale? Notes.A1*Math.pow(2,6):Notes.C1*Math.pow(2,6);
 
+            // Auto Vibrato frequency constant of 10Hz
             float AutoVibFreq = 10;
+
+            // All the 10 phases of the automatic vibrato.
             float AutoPhase_b1 = 0;
             float AutoPhase_b2 = 0;
             float AutoPhase_b3 = 0;
@@ -583,6 +701,7 @@ public class TabletActivity extends AppCompatActivity {
             float AutoPhase_b9 = 0;
             float AutoPhase_b10 = 0;
 
+            // Phases to evaluate each part of the notes wave generated to be playback
             double phase_button1 = 0.0;
             double phase_button2 = 0.0;
             double phase_button3 = 0.0;
@@ -595,22 +714,28 @@ public class TabletActivity extends AppCompatActivity {
             double phase_button10 = 0.0;
 
 
+            // Initialize alpha and beta constants
             double alpha = 0.0;
             double beta = 0.0;
 
 
-            // start audio
+            // Start audio
             mAudioTrack.play();
 
-            // synthesis loop
+            // Synthesis loop
             while(!Stop){
-
+                // Assign Alpha and Beta depending of motion in inhale or exhale buttons
                 alpha    = InhaleOrExhale? InhaleYOffset:ExhaleYOffset;
                 beta     = InhaleOrExhale? InhaleXOffset:ExhaleXOffset;
 
+                // Create a chunk the size of buffer for each note selected
                 for(int i=0; i < buffer_size; i++){
 
-
+                    // Here are all the possible buttons, each one has:
+                    // All effects possible: sine, sawtooth, square or triangle wave.
+                    // Automatic vibrato generation using alpha and beta parameters.
+                    // Saving of wave phase to generate a continuous wave each tie the loop ends.
+                    // If a note isn't selected, the array saves zeros.
 
                     //************************ FIRST BUTTON SOUNDS *********************************
                     if(mPhoneButtonStatus[0]=='1'){
@@ -837,6 +962,9 @@ public class TabletActivity extends AppCompatActivity {
                         }
                     }else{samples_button10[i] = 0;}
 
+                    // Calculate the resulting wave by adding all the notes and normalize the amplitude
+                    // depending on how many notes are selected.
+
                     ResultWave[i] = (short) ((samples_button1[i]
                             + samples_button2[i]
                             + samples_button3[i]
@@ -848,15 +976,22 @@ public class TabletActivity extends AppCompatActivity {
                             + samples_button9[i]
                             + samples_button10[i])/NotesPlaying());
                 }
+                // Send the result wave to playback
                 mAudioTrack.write(ResultWave, 0, buffer_size);
             }
-
+            // Stops AudioTrack streaming
             mAudioTrack.stop();
+            // Release AudioTrack resources
             mAudioTrack.release();
 
         }
     }
 
+    /**
+     * Calculates with activity's global variable mPhoneButtonStatus how many notes are selected on
+     * the smartphone.
+     * @return An integer between 1 and 10 representing the amount of notes currently being played
+     */
     private int NotesPlaying(){
         int counter = 0;
         for(int i=0; i < mPhoneButtonStatus.length; i++){

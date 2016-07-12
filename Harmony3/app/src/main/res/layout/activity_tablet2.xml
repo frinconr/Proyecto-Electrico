@@ -62,18 +62,6 @@
             android:textOn="Square Effect On"
             style="@android:style/Widget.Button.Toggle" />
 
-        <ToggleButton
-            android:layout_width="194dp"
-            android:layout_height="185dp"
-            android:id="@+id/FilterButton"
-            android:layout_gravity="right|bottom"
-            android:background="#236b8e"
-            android:checked="false"
-            android:textColor="@android:color/background_light"
-            android:textSize="@dimen/abc_action_bar_content_inset_material"
-            android:textOff="Filter Off"
-            android:textOn="Filter On" />
-
         <SeekBar
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"

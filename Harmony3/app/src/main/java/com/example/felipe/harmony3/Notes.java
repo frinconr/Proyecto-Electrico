@@ -1,4 +1,3 @@
-
 package com.example.felipe.harmony3;
 
 /**
@@ -7,7 +6,6 @@ package com.example.felipe.harmony3;
 public interface Notes {
 
     // Note fundamental frequencies to access them from TabletActivity
-
     public static final double C1 = 32.7;
     public static final double Cs1 = 34.6;
     public static final double D1 = 36.7;

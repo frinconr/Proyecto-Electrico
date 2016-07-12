@@ -1,7 +1,5 @@
 package com.example.felipe.harmony3;
 
-
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -18,17 +16,17 @@ import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.Toast;
-@SuppressLint("HandlerLeak")
 
 public class PhoneActivity extends AppCompatActivity{
 
 
+    /**
+     * Tag for Log
+     */
     private static final String TAG = "PhoneActivity";
-
 
 
     // Intent request codes
@@ -56,27 +54,12 @@ public class PhoneActivity extends AppCompatActivity{
     private char[] mButtonsState= {'0','0','0','0','0','0','0','0','0','0'};
 
     /**
-     * Char array representing button state: 1-> pressed 0->released
+     * Int array that stores which number of button an specific finger is touching on screen:
+     * -1->Inactive pointer {0-9} -> Number of button
      */
     private int[] mPointersState= {-1,-1,-1,-1,-1,-1,-1,-1,-1,-1};
 
-    /**
-     * Notes buttons
-     */
-
-    /*
-    private Button first_button;
-    private Button second_button;
-    private Button third_button;
-    private Button fourth_button;
-    private Button fifth_button;
-    private Button sixth_button;
-    private Button seventh_button;
-    private Button eighth_button;
-    private Button nineth_button;
-    private Button tenth_button;
-*/
-
+    //Layouts of user interface
     RelativeLayout mRelativeLayout;
     LinearLayout mLinearLayout;
 
@@ -84,39 +67,29 @@ public class PhoneActivity extends AppCompatActivity{
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_phone2);
+
+        //Obtain BluetoothAdapter for managing all Bluetooth actions
         mBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
 
+        // Check if devices has Bluetooth available
         if (mBluetoothAdapter == null) {
             Toast.makeText(getApplicationContext(), "Bluetooth not available on your device", Toast.LENGTH_SHORT).show();
             finish();
         }
-
+        // Initialize layouts with xml definitions
         mRelativeLayout = (RelativeLayout) findViewById(R.id.PhoneRelativeLayout);
         mLinearLayout =  (LinearLayout) findViewById(R.id.PhoneLinearLayout);
-
-
-
-/*
-        // Initialize the notes buttons
-        first_button    = (Button) findViewById(R.id.first_button);
-        second_button   = (Button) findViewById(R.id.second_button);
-        third_button    = (Button) findViewById(R.id.third_button);
-        fourth_button   = (Button) findViewById(R.id.fourth_button);
-        fifth_button    = (Button) findViewById(R.id.fifth_button);
-        sixth_button    = (Button) findViewById(R.id.sixth_button);
-        seventh_button  = (Button) findViewById(R.id.seventh_button);
-        eighth_button   = (Button) findViewById(R.id.eighth_button);
-        nineth_button   = (Button) findViewById(R.id.nineth_button);
-        tenth_button    = (Button) findViewById(R.id.tenth_button);
-*/
     }
 
 
+
+    /**
+     * If BT is not on, request that it be enabled.
+     * setupChat() will then be called during onActivityResult.
+     */
     @Override
     public void onStart() {
         super.onStart();
-        // If BT is not on, request that it be enabled.
-        // setupChat() will then be called during onActivityResult
         if (!mBluetoothAdapter.isEnabled()) {
             Intent enableIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
             startActivityForResult(enableIntent, REQUEST_ENABLE_BT);
@@ -125,6 +98,9 @@ public class PhoneActivity extends AppCompatActivity{
         }
     }
 
+    /**
+     * Release resources from BluetoothChatService
+     */
     @Override
     public void onDestroy() {
         super.onDestroy();
@@ -133,16 +109,16 @@ public class PhoneActivity extends AppCompatActivity{
         }
     }
 
-
+    /**
+     * Covers the case in which BT was not enabled during onStart(), so we were paused to enable it.
+     * onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
+     */
     @Override
     public void onResume() {
         super.onResume();
 
-        // Performing this check in onResume() covers the case in which BT was
-        // not enabled during onStart(), so we were paused to enable it...
-        // onResume() will be called when ACTION_REQUEST_ENABLE activity returns.
         if (mChatService != null) {
-            // Only if the state is STATE_NONE, do we know that we haven't started already
+            // STATE_NONE indicates that BluetoothChatService hasn't been started
             if (mChatService.getState() == BluetoothChatService.STATE_NONE) {
                 // Start the Bluetooth chat services
                 mChatService.start();
@@ -150,21 +126,26 @@ public class PhoneActivity extends AppCompatActivity{
         }
     }
 
-
-
+    /**
+     * Initialize the contents of the Activity's standard options menu
+     * @param menu The options menu
+     * @return Returns true for the menu to be displayed
+     */
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
+        // Inflate the menu; adds items to the action bar.
         getMenuInflater().inflate(R.menu.phone_menu, menu);
-
         return true;
     }
 
+    /**
+     * This method is called whenever an item in the options menu is selected
+     * @param item Menu item id defined on xml description
+     * @return Returns true if action was processed or false in case not
+     */
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
+        // Handle action bar click actions.
         int id = item.getItemId();
         switch (id) {
             case R.id.devices_list:
@@ -173,12 +154,22 @@ public class PhoneActivity extends AppCompatActivity{
                 startActivityForResult(serverIntent, REQUEST_CONNECT_DEVICE);
                 return true;
             case R.id.Discover_device:
+                // Discover device for other to scan it.
                 ensureDiscoverable();
                 return true;
         }
         return false;
     }
-
+    /**
+     *Called when the users responds to the Bluetooth enabled request or when a device id selected
+     *on DeviceListActivity.
+     *@param requestCode
+     *          Code with which the activity was started
+     *@param resultCode
+     *          Resulted code returned form activity
+     *@param data
+     *          Any additional data from it
+    */
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
 
@@ -215,6 +206,7 @@ public class PhoneActivity extends AppCompatActivity{
             switch (msg.what) {
                 case Constants.MESSAGE_STATE_CHANGE:
                     switch (msg.arg1) {
+                        // Bluetooth connection has change state. Change header subtitle for notify user.
                         case BluetoothChatService.STATE_CONNECTED:
                             setStatus(getString(R.string.title_connected_to)+" "+mConnectedDeviceName);
                             break;
@@ -231,7 +223,6 @@ public class PhoneActivity extends AppCompatActivity{
                     byte[] writeBuf = (byte[]) msg.obj;
                     // construct a string from the buffer
                     String writeMessage = new String(writeBuf);
-                    //Log.d(TAG, writeMessage);
                     break;
                 case Constants.MESSAGE_READ:
                     byte[] readBuf = (byte[]) msg.obj;
@@ -291,231 +282,8 @@ public class PhoneActivity extends AppCompatActivity{
      */
     private void setupChat() {
         Log.d(TAG, "setupChat()");
-
-
-/*
-    //************************************ FIRST BUTTON ********************************************
-
-        if (first_button != null) {
-            first_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[0]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[0]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-
-    //************************************ SECOND BUTTON ********************************************
-        if (second_button != null) {
-            second_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[1]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[1]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-    //************************************ THIRD BUTTON ********************************************
-        if (third_button != null) {
-            third_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[2]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[2]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-    //************************************ THIRD BUTTON ********************************************
-        if (fourth_button != null) {
-            fourth_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[3]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[3]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-    //************************************ FOURTH BUTTON ********************************************
-        if (fourth_button != null) {
-            fourth_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[3]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[3]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-
-    //************************************ FIFTH BUTTON ********************************************
-        if (fifth_button != null) {
-            fifth_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[4]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[4]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-    //************************************ SIXTH BUTTON ********************************************
-        if (sixth_button != null) {
-            sixth_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[5]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[5]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-
-    //************************************ SEVENTH BUTTON ********************************************
-        if (seventh_button != null) {
-            seventh_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[6] = '0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[6] = '1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-
-    //************************************ EIGHTH BUTTON ********************************************
-        if (eighth_button != null) {
-            eighth_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[7]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[7]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-
-    //************************************ NINETH BUTTON ********************************************
-        if (nineth_button != null) {
-            nineth_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[8]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[8]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-
-    //************************************ TENTH BUTTON ********************************************
-        if (tenth_button != null) {
-            tenth_button.setOnTouchListener(new View.OnTouchListener() {
-                @Override
-                public boolean onTouch(View v, MotionEvent event) {
-
-                    if (event.getAction() == MotionEvent.ACTION_UP) {
-                        mButtonsState[9]='0';
-                        sendUpdatedState();
-
-                    } else if (event.getAction() == MotionEvent.ACTION_DOWN) {
-                        mButtonsState[9]='1';
-                        sendUpdatedState();
-                    }
-
-                    return false;
-                }
-            });
-        }
-
-    */
-
         // Initialize the BluetoothChatService to perform bluetooth connections
         mChatService = new BluetoothChatService(this, mHandler);
-
     }
 
 
@@ -556,7 +324,7 @@ public class PhoneActivity extends AppCompatActivity{
      * @param message A string of text to send.
      */
     private void sendMessage(String message) {
-        // Check that we're actually connected before trying anything
+        // Check stablished connection
         if (mChatService.getState() != BluetoothChatService.STATE_CONNECTED) {
             Toast.makeText(getApplicationContext(), R.string.not_connected, Toast.LENGTH_SHORT).show();
             return;
@@ -569,30 +337,36 @@ public class PhoneActivity extends AppCompatActivity{
     }
 
     /**
-     * Sends the state of the note buttons each time they change
+     * Converts the Char array mButtonState to send button state via Bluetooth
      */
     private void sendUpdatedState() {
         String state = new String(mButtonsState);
         Log.d(TAG, state);
         sendMessage(state);
     }
-
-
+    /**
+    *Called when a touch screen motion event occurs.
+    */
     @Override
     public boolean onTouchEvent(MotionEvent event){
+        //Get the type of action that invoke the method
         int action = event.getActionMasked();
+        //Get the pointer index
         int pointerIndex = MotionEventCompat.getActionIndex(event);
+        //Get the unique pointer ID
         int pointerId = event.getPointerId(pointerIndex);
+        // Number of button the pointer is touching
         int ButtonIndex;
 
         switch(action){
-            // ACTION_DOWN es el evento que se activa cuando el primer dedo oprime la pantalla
+            // ACTION_DOWN is the event that happens when the first finger touches the screen
             case MotionEvent.ACTION_DOWN:
-                // Con las coordenadas del puntero se encuentra el numero del boton que esta presionando
+                //With the pointer coordinates we found the number of button thats pressing
                 ButtonIndex = FindButtonPressed((int)event.getX(pointerIndex), (int)event.getY(pointerIndex));
-                // En caso de que si este presionando alguno se guarda el numero de boton en mPointersState
-                // con el ID del puntero como indice.Sino, se guarda un -1 por si el dedo se mueve despues.
-                // Se cambia el estado del boton a activo y se envia el mensaje de bluetooth.
+                //In case the finger is touching some button, we save that number in mPointersState array
+                //using the pointer's ID as index. If not, a -1 is stored in case the pointer moves around.
+                //Button state is activated and message is sent.
+
                 mPointersState[pointerId]=ButtonIndex;
                 if(ButtonIndex!=-1) {
                     mButtonsState[ButtonIndex]='1';
@@ -602,8 +376,9 @@ public class PhoneActivity extends AppCompatActivity{
                 }
                 //Log.d("DACTION:", "Button" + String.valueOf(ButtonIndex) +"Pressed by:"+String.valueOf(pointerIndex)+","+String.valueOf(pointerId));
                 break;
-            // El evento ACTION_UP ocurre cuando el primer dedo deja de tocar la pantalla. En este caso se cambia el estado del numero de boton
-            // que se habia guardado en el arreglo mPointerState y se resetea el puntero colocando un -1.
+
+            //ACTION_UP occurs when the first pointer stops touching the screen. This will deactivate the pointer and the effect of the button.
+            // The pointer number is reset to -1 in mPointerState array.
             case MotionEvent.ACTION_UP:
                 ButtonIndex = FindButtonPressed((int)event.getX(pointerIndex), (int)event.getY(pointerIndex));
                 if(mPointersState[pointerId]!=-1) {
@@ -611,10 +386,10 @@ public class PhoneActivity extends AppCompatActivity{
                     mPointersState[pointerId] = -1;
                     sendUpdatedState();
                 }
-                //Log.d("DACTION:", "Button" + String.valueOf(ButtonIndex) +"Released by:"+String.valueOf(pointerIndex)+","+String.valueOf(pointerId));
                break;
-            // El evento ACTION_POINTER_DOWN ocurre cuando mas de un dedo presiona la pantalla. Se realizan las mismas
-            // acciones que en el ACTION_DOWN.
+
+            // ACTION_POINTER_DOWN occurs when more than one finger are touching the screen. The instructions are
+            // the same as ACTION_DOWN.
             case MotionEvent.ACTION_POINTER_DOWN:
                 ButtonIndex = FindButtonPressed((int)event.getX(pointerIndex), (int)event.getY(pointerIndex));
                 mPointersState[pointerId]=ButtonIndex;
@@ -622,8 +397,9 @@ public class PhoneActivity extends AppCompatActivity{
                     mButtonsState[ButtonIndex]='1';
                     sendUpdatedState();
                 }
-                //Log.d("DACTION:", "Button" + String.valueOf(ButtonIndex) +"Pressed by:"+String.valueOf(pointerIndex)+","+String.valueOf(pointerId));
                 break;
+            // ACTION_POINTER_UP occurs when a pointer different than the first one releases the pressure form the button . The instructions are
+            // the same as ACTION_UP.
             case MotionEvent.ACTION_POINTER_UP:
                 ButtonIndex = FindButtonPressed((int)event.getX(pointerIndex), (int)event.getY(pointerIndex));
                 if(mPointersState[pointerId]!=-1) {
@@ -631,13 +407,11 @@ public class PhoneActivity extends AppCompatActivity{
                     mPointersState[pointerId] = -1;
                     sendUpdatedState();
                 }
-                //Log.d("DACTION:", "Button" + String.valueOf(ButtonIndex) +"Released by:"+String.valueOf(pointerIndex)+","+String.valueOf(pointerId));
                 break;
 
-            // El evento ACTION_MOVE ocurre cuando alguno de los dedos que toca la pantalla, se mueve.
-            // En este caso hay que revisar si el puntero salio de los limites del boton que estaba tocando.
-            // Si se sale de los limites, se inhabilita el boton pasado en mButtonState y ase activa el actual.
-            // Se guarada el nuevo estado del puntero en mPointerState.
+            // ACTION_MOVE occurs when any of the pointers touching the screen starts moving around.
+            // in this case we check if the the pointer was touching a button so that we deactivate
+            // the old one and activate the new one. The new pointer state is changed on mPointersState.
 
             case MotionEvent.ACTION_MOVE:
 
@@ -645,13 +419,14 @@ public class PhoneActivity extends AppCompatActivity{
 
                     ButtonIndex = FindButtonPressed((int) event.getX(i), (int) event.getY(i));
                     pointerId = event.getPointerId(i);
-                    // En caso de que el dedo se haya desplazado de su posicion actual
+                    // In case the pointer has left the button it was touching.
                     if (ButtonIndex != -1 & ButtonIndex != mPointersState[pointerId]) {
                         mButtonsState[mPointersState[pointerId]] = '0';
                         mPointersState[pointerId] = ButtonIndex;
                         mButtonsState[ButtonIndex] = '1';
                         sendUpdatedState();
-                    // En caso de que el dedo no haya tocado ningun boton, pero se movio despues.
+                    // In case some finger had touched the screen outside any button and then moved
+                    // to activate one.
                     }else if(ButtonIndex != -1 & mPointersState[pointerId]==-1){
                         mPointersState[pointerId] = ButtonIndex;
                         mButtonsState[ButtonIndex] = '1';
@@ -665,10 +440,18 @@ public class PhoneActivity extends AppCompatActivity{
         return super.onTouchEvent(event);
     }
 
-
+    /**
+     * This function takes a pointer's coordinates and seeks which button it is touching.
+     *
+     * @param XCoor X coordinate on screen
+     * @param YCoord Y coordinate on screen
+     * @return Returns an integer between 0 and 9 indicating the number of button or -1 if isn't touching any
+     */
 
 
     private int FindButtonPressed(int XCoor, int YCoord){
+
+        //Check all item in xml definition finding buttons
         for(int i =0; i< mLinearLayout.getChildCount(); i++)
         {
 
@@ -679,8 +462,9 @@ public class PhoneActivity extends AppCompatActivity{
                 View view = LinearLayChild.getChildAt(j);
                 int[] ViewLocation = new int[2];
                 view.getLocationOnScreen(ViewLocation);
+                //Get the button coordinates
                 Rect outRect = new Rect(ViewLocation[0], ViewLocation[1], ViewLocation[0] + view.getWidth(), ViewLocation[1] + view.getHeight());
-
+                // Compares the pointer's coordinates with the ones of the button
                if (outRect.contains(XCoor, YCoord)) {
                     return GetButtonNumber(getResources().getResourceEntryName(view.getId()));
                 }
@@ -688,6 +472,12 @@ public class PhoneActivity extends AppCompatActivity{
         }
         return -1;
     }
+
+    /**
+     * Converts the id of a button in a number to process
+     * @param Id Id taken when finding button coordinates
+     * @return Integer between 0-9 indicating number of button
+     */
 
     private int GetButtonNumber(String Id){
 
@@ -702,9 +492,7 @@ public class PhoneActivity extends AppCompatActivity{
             case "eighth_button":   return 7;
             case "nineth_button":   return 8;
             case "tenth_button":    return 9;
-            default: return 0;
+            default: return -1;
         }
     }
-
-
 }

@@ -2,14 +2,18 @@ package com.example.felipe.harmony3;
 
 
 import android.content.Intent;
-import android.support.v4.view.MotionEventCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
-import android.widget.RelativeLayout;
+
+
+
+/**
+ * This Activity appears when starting the application.
+ * It is the welcome screen where the user can select
+ * between using the smartphone or the tablet configuration.
+ */
 
 public class MainActivity extends AppCompatActivity{
 
@@ -21,9 +25,8 @@ public class MainActivity extends AppCompatActivity{
         setContentView(R.layout.activity_main);
 
 
-
-
-//************************************* Smartphone Button ******************************************
+        // Smartphone button configuration, launches smartphone activity with a slide in from left
+        // animation.
 
         Button phone_button = (Button) findViewById(R.id.smartphone_button);
 
@@ -40,7 +43,9 @@ public class MainActivity extends AppCompatActivity{
         });
 
 
-//************************************* Client Button **********************************************
+        // Tablet button configuration, launches smartphone activity with a slide in from right
+        // animation.
+
         Button tablet_button = (Button) findViewById(R.id.tablet_button);
         assert tablet_button != null;
         tablet_button.setOnClickListener(new View.OnClickListener() {
@@ -53,7 +58,6 @@ public class MainActivity extends AppCompatActivity{
                 overridePendingTransition(R.anim.slide_in_from_right, R.anim.fade_out);
             }
         });
-//**************************************************************************************************
     }
 
 
